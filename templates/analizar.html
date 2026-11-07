@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Analizar texto — Parte 1{% endblock %}
+{% block content %}
+<section class="hero compact">
+  <p class="eyebrow">Vista previa de la app</p>
+  <h1>Analiza un texto</h1>
+  <p class="lead">Clasificación con los tres modelos. El análisis masivo y el dashboard los completan las partes 2 y 3.</p>
+</section>
+
+<form class="card form" method="post">
+  <label for="texto">Tweet o frase</label>
+  <textarea id="texto" name="texto" rows="5" placeholder="I love this project, it is awesome!">{{ texto }}</textarea>
+  <button class="btn neon" type="submit">Clasificar</button>
+</form>
+
+{% if error %}
+  <p class="error">{{ error }}</p>
+{% endif %}
+
+{% if resultado %}
+<article class="card">
+  <p class="tag">Texto limpio</p>
+  <p class="clean">{{ resultado.texto_limpio }}</p>
+  <h2>Consenso: <span class="glow">{{ resultado.consenso }}</span></h2>
+  <div class="preds">
+    {% for p in resultado.predicciones %}
+    <div class="pred {{ p.sentimiento|lower }}">
+      <h3>{{ p.modelo }}</h3>
+      <p>{{ p.sentimiento }}</p>
+      {% if p.confianza is not none %}
+        <small>Confianza {{ p.confianza }}</small>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</article>
+{% endif %}
+{% endblock %}

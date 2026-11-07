@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Sentinel Blue{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('inicio') }}">
+      <span class="brand-mark"></span>
+      Sentinel Blue
+    </a>
+    <nav>
+      <a href="{{ url_for('inicio') }}">Inicio</a>
+      <a href="{{ url_for('metricas') }}">Métricas</a>
+      <a href="{{ url_for('analizar') }}">Analizar texto</a>
+      <a href="{{ url_for('dashboard') }}">Dashboard</a>
+      <a href="{{ url_for('temporal') }}">Temporal</a>
+    </nav>
+    <span class="status {% if listos %}ok{% else %}warn{% endif %}">
+      {% if listos %}Modelos listos{% else %}Sin entrenar{% endif %}
+    </span>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

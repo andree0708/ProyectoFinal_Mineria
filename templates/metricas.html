@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Métricas — Parte 1{% endblock %}
+{% block content %}
+<section class="hero compact">
+  <p class="eyebrow">Parte 1</p>
+  <h1>Accuracy, F1 y matriz de confusión</h1>
+</section>
+
+{% if not datos %}
+  <article class="card warn-box">
+    <h2>Aún no hay modelos</h2>
+    <p>En la carpeta del proyecto ejecuta:</p>
+    <code>python -m src.train</code>
+  </article>
+{% else %}
+  <p class="meta">Muestra: {{ datos.n_muestra }} tweets · Entrenamiento: {{ datos.n_train }} · Prueba: {{ datos.n_test }}</p>
+  <section class="grid-3">
+    {% for nombre, m in datos.modelos.items() %}
+    <article class="card metric">
+      <h2>{{ nombre }}</h2>
+      <div class="stats">
+        <div><span>Accuracy</span><strong>{{ m.accuracy }}</strong></div>
+        <div><span>F1</span><strong>{{ m.f1 }}</strong></div>
+        <div><span>Precision</span><strong>{{ m.precision }}</strong></div>
+        <div><span>Recall</span><strong>{{ m.recall }}</strong></div>
+      </div>
+      <p class="cm-title">Matriz de confusión</p>
+      <table class="cm">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Pred. Neg</th>
+            <th>Pred. Pos</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>Real Neg</th>
+            <td>{{ m.matriz_confusion[0][0] }}</td>
+            <td>{{ m.matriz_confusion[0][1] }}</td>
+          </tr>
+          <tr>
+            <th>Real Pos</th>
+            <td>{{ m.matriz_confusion[1][0] }}</td>
+            <td>{{ m.matriz_confusion[1][1] }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </article>
+    {% endfor %}
+  </section>
+{% endif %}
+{% endblock %}

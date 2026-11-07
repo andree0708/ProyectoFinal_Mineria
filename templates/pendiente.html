@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Parte {{ parte }} pendiente{% endblock %}
+{% block content %}
+<section class="hero compact">
+  <p class="eyebrow">Aún no implementado</p>
+  <h1>Parte {{ parte }}{% if parte == 2 %} · Dashboard de sentimiento{% else %} · Análisis temporal{% endif %}</h1>
+  <p class="lead">Esta pantalla es un marcador para el compañero asignado. El detalle de lo que falta está en el README.</p>
+</section>
+<article class="card">
+  {% if parte == 2 %}
+  <ul>
+    <li>Cargar varios textos o un CSV</li>
+    <li>Gráficos de % positivo vs negativo</li>
+    <li>Comparar los tres modelos en el dashboard</li>
+  </ul>
+  {% else %}
+  <ul>
+    <li>Parsear la columna <code>date</code> del dataset</li>
+    <li>Gráfico de sentimiento por día / semana</li>
+    <li>Filtros de rango de fechas</li>
+  </ul>
+  {% endif %}
+</article>
+{% endblock %}

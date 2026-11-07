@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Parte 1 — Sentinel Blue{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">Proyecto final · Análisis de sentimiento</p>
+  <h1>Clasificación de tweets con <span>Naive Bayes</span>, <span>SVM</span> y <span>Random Forest</span></h1>
+  <p class="lead">
+    Dataset Sentiment140 (1.6 millones de tweets). Esta es la <strong>Parte 1</strong>:
+    preprocesamiento de texto, entrenamiento de los tres modelos y métricas.
+  </p>
+  <div class="actions">
+    <a class="btn neon" href="{{ url_for('metricas') }}">Ver métricas</a>
+    <a class="btn ghost" href="{{ url_for('analizar') }}">Probar un texto</a>
+  </div>
+</section>
+
+<section class="grid-3">
+  <article class="card active">
+    <p class="tag">Parte 1 · lista</p>
+    <h2>Pipeline de ML</h2>
+    <ul>
+      <li>Limpieza de texto (URLs, menciones, signos)</li>
+      <li>TF-IDF + Naive Bayes, SVM y Random Forest</li>
+      <li>Accuracy, F1 y matriz de confusión</li>
+    </ul>
+  </article>
+  <article class="card muted">
+    <p class="tag">Parte 2 · compañero</p>
+    <h2>App + dashboard</h2>
+    <ul>
+      <li>Análisis masivo de textos</li>
+      <li>Dashboard de distribución de sentimiento</li>
+      <li>Comparación visual de modelos</li>
+    </ul>
+  </article>
+  <article class="card muted">
+    <p class="tag">Parte 3 · compañero</p>
+    <h2>Análisis temporal</h2>
+    <ul>
+      <li>Series de tiempo con la columna date</li>
+      <li>Filtros por periodo</li>
+      <li>Picos positivos y negativos</li>
+    </ul>
+  </article>
+</section>
+
+<section class="howto card">
+  <h2>Cómo arrancar la Parte 1</h2>
+  <ol>
+    <li>Instala dependencias: <code>pip install -r requirements.txt</code></li>
+    <li>Entrena (unos minutos): <code>python -m src.train</code></li>
+    <li>Abre la web: <code>python app.py</code> y entra a <code>http://127.0.0.1:5000</code></li>
+  </ol>
+</section>
+{% endblock %}

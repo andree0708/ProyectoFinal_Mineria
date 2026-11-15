@@ -2,21 +2,32 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-DATASET_PATH = ROOT / "training.1600000.processed.noemoticon.csv"
+# --- Datos ---------------------------------------------------------------
+# data/raw/        dataset original tal cual se descarga (no se versiona)
+# data/processed/  datos limpios derivados del raw (muestra preprocesada)
+# data/results/    salidas: métricas de entrenamiento, predicciones, exports
+DATA_DIR = ROOT / "data"
+RAW_DIR = DATA_DIR / "raw"
+PROCESSED_DIR = DATA_DIR / "processed"
+RESULTS_DIR = DATA_DIR / "results"
+
+DATASET_URL = "https://cs.stanford.edu/people/alecmgo/trainingandtestdata.zip"
+DATASET_PATH = RAW_DIR / "training.1600000.processed.noemoticon.csv"
 COLUMNS = ["target", "ids", "date", "flag", "user", "text"]
 
+SAMPLE_PATH = PROCESSED_DIR / "muestra_entrenamiento.csv"
+METRICS_PATH = RESULTS_DIR / "metrics.json"
+
+# --- Entrenamiento -------------------------------------------------------
 SAMPLE_SIZE = 40_000
 TEST_SIZE = 0.2
 RANDOM_STATE = 42
 MAX_FEATURES = 5_000
 NGRAM_RANGE = (1, 2)
 
-DATA_DIR = ROOT / "data"
+# --- Modelos (binarios, no se versionan) ---------------------------------
 MODELS_DIR = ROOT / "models"
-METRICS_PATH = MODELS_DIR / "metrics.json"
 VECTORIZER_PATH = MODELS_DIR / "tfidf_vectorizer.joblib"
-SAMPLE_PATH = DATA_DIR / "muestra_entrenamiento.csv"
-
 MODEL_FILES = {
     "Naive Bayes": MODELS_DIR / "naive_bayes.joblib",
     "SVM": MODELS_DIR / "svm.joblib",

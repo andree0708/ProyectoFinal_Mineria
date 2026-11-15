@@ -1,11 +1,14 @@
 import pandas as pd
 
 from src.config import COLUMNS, DATASET_PATH, RANDOM_STATE, SAMPLE_PATH, SAMPLE_SIZE
+from src.download import descargar_dataset
 from src.preprocessing import limpiar_texto
 
 
 def cargar_dataset(ruta=None) -> pd.DataFrame:
-    ruta = ruta or DATASET_PATH
+    if ruta is None:
+        descargar_dataset()
+        ruta = DATASET_PATH
     df = pd.read_csv(
         ruta,
         encoding="latin-1",

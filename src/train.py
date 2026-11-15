@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 import joblib
-import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import (
@@ -19,6 +18,8 @@ from sklearn.svm import LinearSVC
 from src.config import (
     MAX_FEATURES,
     METRICS_PATH,
+    RESULTS_DIR,
+    SAMPLE_PATH,
     MODEL_FILES,
     MODELS_DIR,
     NGRAM_RANGE,
@@ -55,18 +56,24 @@ def metricas_modelo(y_true, y_pred) -> dict:
 
 def entrenar() -> dict:
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     print("Cargando y preprocesando muestra del dataset...")
     muestra = preparar_muestra()
 
-    X = muestra["texto_limpio"]
-    y = muestra["label"]
-    X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
+    idx_train, idx_test = train_test_split(
+        muestra.index,
         test_size=TEST_SIZE,
         random_state=RANDOM_STATE,
-        stratify=y,
+        stratify=muestra["label"],
     )
+    # Se marca cada fila para que dashboard / análisis temporal puedan
+    # evaluar solo sobre datos que los modelos no vieron al entrenar.
+    muestra["split"] = "train"
+    muestra.loc[idx_test, "split"] = "test"
+    muestra.to_csv(SAMPLE_PATH, index=False)
+
+    X_train, y_train = muestra.loc[idx_train, "texto_limpio"], muestra.loc[idx_train, "label"]
+    X_test, y_test = muestra.loc[idx_test, "texto_limpio"], muestra.loc[idx_test, "label"]
 
     print("Vectorizando con TF-IDF...")
     vectorizer = TfidfVectorizer(

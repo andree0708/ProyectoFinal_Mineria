@@ -1,0 +1,55 @@
+{
+  "n_muestra": 40000,
+  "n_train": 32000,
+  "n_test": 8000,
+  "modelos": {
+    "Naive Bayes": {
+      "accuracy": 0.7406,
+      "f1": 0.7406,
+      "precision": 0.7407,
+      "recall": 0.7406,
+      "matriz_confusion": [
+        [
+          3007,
+          993
+        ],
+        [
+          1082,
+          2918
+        ]
+      ]
+    },
+    "SVM": {
+      "accuracy": 0.7351,
+      "f1": 0.735,
+      "precision": 0.7356,
+      "recall": 0.7351,
+      "matriz_confusion": [
+        [
+          2850,
+          1150
+        ],
+        [
+          969,
+          3031
+        ]
+      ]
+    },
+    "Random Forest": {
+      "accuracy": 0.7064,
+      "f1": 0.7017,
+      "precision": 0.7201,
+      "recall": 0.7064,
+      "matriz_confusion": [
+        [
+          2326,
+          1674
+        ],
+        [
+          675,
+          3325
+        ]
+      ]
+    }
+  }
+}

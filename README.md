@@ -36,9 +36,25 @@ Paleta: azul oscuro (`#06111f`, `#0d2744`), azul claro (`#3db8ff`, `#9ad8ff`) y 
 ### Cómo ejecutarlo
 
 ```bash
+python -m venv .venv && source .venv/bin/activate   # (Windows: .venv\Scripts\activate)
 pip install -r requirements.txt
-python -m src.train
+python -m src.download   # baja Sentiment140 (~80 MB) a data/raw/ — sin cuenta de Kaggle
+python -m src.train      # si falta el dataset, lo descarga solo
 python app.py
+```
+
+El dataset de Kaggle es un espejo del zip original de Stanford; `src/download.py` baja ese zip directamente, así que no hacen falta credenciales.
+
+### Estructura de carpetas
+
+```
+data/
+  raw/         dataset original descargado (no se sube a git)
+  processed/   muestra_entrenamiento.csv: texto limpio + etiqueta + fecha + split (train/test)
+  results/     metrics.json y salidas de la app (predicciones, exports)
+models/        modelos .joblib entrenados (no se suben a git)
+src/           pipeline: config, download, preprocessing, dataset, train, predict
+templates/, static/   frontend Flask
 ```
 
 Abre `http://127.0.0.1:5000`.
@@ -47,16 +63,17 @@ El entrenamiento usa una **muestra balanceada de 40 000 tweets** (20 000 negativ
 
 Al entrenar se generan:
 
-- `data/muestra_entrenamiento.csv` — muestra con texto original, texto limpio, etiqueta y **fecha** (la Parte 3 la necesita)
+- `data/processed/muestra_entrenamiento.csv` — muestra con texto original, texto limpio, etiqueta, **fecha** (la Parte 3 la necesita) y `split` (`train`/`test`: usar `test` para evaluar sin fuga de datos)
 - `models/tfidf_vectorizer.joblib`
 - `models/naive_bayes.joblib`, `models/svm.joblib`, `models/random_forest.joblib`
-- `models/metrics.json`
+- `data/results/metrics.json`
 
 ### Archivos de la Parte 1
 
 ```
 app.py
 src/config.py
+src/download.py
 src/preprocessing.py
 src/dataset.py
 src/train.py
@@ -101,7 +118,7 @@ Hoy solo se puede pegar **un** texto. Dashboard y análisis masivo no existen (l
 ### Criterio de “terminado”
 
 - Un usuario puede subir 100 textos y ver el % de sentimiento.
-- El dashboard se actualiza con esos resultados (sesión o archivo en `data/`).
+- El dashboard se actualiza con esos resultados (sesión o archivo en `data/results/`).
 - Se ve la comparación Naive Bayes vs SVM vs Random Forest.
 
 ---
@@ -133,7 +150,7 @@ df["fecha"] = pd.to_datetime(df["date"], errors="coerce")
    - Filtro de rango de fechas (el dataset es sobre todo abril–junio 2009).
 
 2. **Fuente de datos**
-   - Empezar con `data/muestra_entrenamiento.csv` (ya tiene `date`, `label`, `text`).
+   - Empezar con `data/processed/muestra_entrenamiento.csv` (ya tiene `date`, `label`, `text`).
    - Opcional: permitir que el dashboard de la Parte 2 le pase predicciones nuevas (textos del usuario con fecha).
    - No hace falta volver a entrenar modelos. Si quieren “sentimiento predicho vs etiqueta real”, usen `src.predict` sobre la muestra.
 

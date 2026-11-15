@@ -1,0 +1,479 @@
+{
+  "dataset": {
+    "n_tweets": 1600000,
+    "n_usuarios": 659775,
+    "fecha_min": "2009-04-06",
+    "fecha_max": "2009-06-25",
+    "n_dias_con_datos": 48,
+    "n_dias_rango": 80,
+    "pct_positivo": 0.5,
+    "palabras_media": {
+      "negativo": 13.58,
+      "positivo": 12.77
+    },
+    "sesgo_temporal": {
+      "corte": "2009-06-17",
+      "n_antes": 1353120,
+      "n_despues": 246880,
+      "pct_positivo_antes": 0.5912,
+      "pct_positivo_despues": 0.0,
+      "rango_diario_antes": [
+        0.3584,
+        0.6441
+      ],
+      "chi2": 291921.5,
+      "p_valor": 0.0,
+      "cramer_v": 0.4271
+    },
+    "por_dia": [
+      {
+        "fecha": "2009-04-06",
+        "n": 3360,
+        "pct_positivo": 0.5756
+      },
+      {
+        "fecha": "2009-04-07",
+        "n": 17311,
+        "pct_positivo": 0.587
+      },
+      {
+        "fecha": "2009-04-17",
+        "n": 3084,
+        "pct_positivo": 0.5966
+      },
+      {
+        "fecha": "2009-04-18",
+        "n": 21754,
+        "pct_positivo": 0.5844
+      },
+      {
+        "fecha": "2009-04-19",
+        "n": 27469,
+        "pct_positivo": 0.584
+      },
+      {
+        "fecha": "2009-04-20",
+        "n": 18460,
+        "pct_positivo": 0.5765
+      },
+      {
+        "fecha": "2009-04-21",
+        "n": 8587,
+        "pct_positivo": 0.5919
+      },
+      {
+        "fecha": "2009-05-01",
+        "n": 7716,
+        "pct_positivo": 0.5783
+      },
+      {
+        "fecha": "2009-05-02",
+        "n": 27434,
+        "pct_positivo": 0.5845
+      },
+      {
+        "fecha": "2009-05-03",
+        "n": 35333,
+        "pct_positivo": 0.5817
+      },
+      {
+        "fecha": "2009-05-04",
+        "n": 15481,
+        "pct_positivo": 0.5841
+      },
+      {
+        "fecha": "2009-05-09",
+        "n": 11739,
+        "pct_positivo": 0.5743
+      },
+      {
+        "fecha": "2009-05-10",
+        "n": 26029,
+        "pct_positivo": 0.5888
+      },
+      {
+        "fecha": "2009-05-11",
+        "n": 4186,
+        "pct_positivo": 0.5784
+      },
+      {
+        "fecha": "2009-05-13",
+        "n": 4066,
+        "pct_positivo": 0.5632
+      },
+      {
+        "fecha": "2009-05-14",
+        "n": 17460,
+        "pct_positivo": 0.5814
+      },
+      {
+        "fecha": "2009-05-16",
+        "n": 9146,
+        "pct_positivo": 0.5804
+      },
+      {
+        "fecha": "2009-05-17",
+        "n": 40154,
+        "pct_positivo": 0.6441
+      },
+      {
+        "fecha": "2009-05-18",
+        "n": 36469,
+        "pct_positivo": 0.6337
+      },
+      {
+        "fecha": "2009-05-21",
+        "n": 2132,
+        "pct_positivo": 0.6304
+      },
+      {
+        "fecha": "2009-05-22",
+        "n": 39074,
+        "pct_positivo": 0.6431
+      },
+      {
+        "fecha": "2009-05-23",
+        "n": 169,
+        "pct_positivo": 0.5621
+      },
+      {
+        "fecha": "2009-05-25",
+        "n": 169,
+        "pct_positivo": 0.5799
+      },
+      {
+        "fecha": "2009-05-26",
+        "n": 10778,
+        "pct_positivo": 0.5958
+      },
+      {
+        "fecha": "2009-05-27",
+        "n": 841,
+        "pct_positivo": 0.5636
+      },
+      {
+        "fecha": "2009-05-28",
+        "n": 15903,
+        "pct_positivo": 0.611
+      },
+      {
+        "fecha": "2009-05-29",
+        "n": 73827,
+        "pct_positivo": 0.6011
+      },
+      {
+        "fecha": "2009-05-30",
+        "n": 103673,
+        "pct_positivo": 0.6211
+      },
+      {
+        "fecha": "2009-05-31",
+        "n": 94588,
+        "pct_positivo": 0.6152
+      },
+      {
+        "fecha": "2009-06-01",
+        "n": 110290,
+        "pct_positivo": 0.5984
+      },
+      {
+        "fecha": "2009-06-02",
+        "n": 64192,
+        "pct_positivo": 0.604
+      },
+      {
+        "fecha": "2009-06-03",
+        "n": 41588,
+        "pct_positivo": 0.6148
+      },
+      {
+        "fecha": "2009-06-04",
+        "n": 7842,
+        "pct_positivo": 0.5981
+      },
+      {
+        "fecha": "2009-06-05",
+        "n": 58757,
+        "pct_positivo": 0.5989
+      },
+      {
+        "fecha": "2009-06-06",
+        "n": 111676,
+        "pct_positivo": 0.6083
+      },
+      {
+        "fecha": "2009-06-07",
+        "n": 96350,
+        "pct_positivo": 0.6039
+      },
+      {
+        "fecha": "2009-06-14",
+        "n": 8272,
+        "pct_positivo": 0.5955
+      },
+      {
+        "fecha": "2009-06-15",
+        "n": 109781,
+        "pct_positivo": 0.5868
+      },
+      {
+        "fecha": "2009-06-16",
+        "n": 67980,
+        "pct_positivo": 0.3584
+      },
+      {
+        "fecha": "2009-06-17",
+        "n": 44012,
+        "pct_positivo": 0.0
+      },
+      {
+        "fecha": "2009-06-18",
+        "n": 43004,
+        "pct_positivo": 0.0
+      },
+      {
+        "fecha": "2009-06-19",
+        "n": 43136,
+        "pct_positivo": 0.0
+      },
+      {
+        "fecha": "2009-06-20",
+        "n": 45364,
+        "pct_positivo": 0.0
+      },
+      {
+        "fecha": "2009-06-21",
+        "n": 16360,
+        "pct_positivo": 0.0
+      },
+      {
+        "fecha": "2009-06-22",
+        "n": 12009,
+        "pct_positivo": 0.0
+      },
+      {
+        "fecha": "2009-06-23",
+        "n": 17002,
+        "pct_positivo": 0.0
+      },
+      {
+        "fecha": "2009-06-24",
+        "n": 6299,
+        "pct_positivo": 0.0
+      },
+      {
+        "fecha": "2009-06-25",
+        "n": 19694,
+        "pct_positivo": 0.0
+      }
+    ]
+  },
+  "modelos": {
+    "n_test": 8000,
+    "mejor_individual": "Naive Bayes",
+    "modelos": {
+      "Naive Bayes": {
+        "accuracy": 0.7406,
+        "accuracy_ic95": [
+          0.7309,
+          0.7501
+        ],
+        "f1": 0.7406,
+        "tp": 2918,
+        "tn": 3007,
+        "fp": 993,
+        "fn": 1082,
+        "fpr": 0.2482,
+        "fnr": 0.2705,
+        "pct_pred_positivo": 0.4889
+      },
+      "SVM": {
+        "accuracy": 0.7351,
+        "accuracy_ic95": [
+          0.7253,
+          0.7447
+        ],
+        "f1": 0.735,
+        "tp": 3031,
+        "tn": 2850,
+        "fp": 1150,
+        "fn": 969,
+        "fpr": 0.2875,
+        "fnr": 0.2422,
+        "pct_pred_positivo": 0.5226
+      },
+      "Random Forest": {
+        "accuracy": 0.7064,
+        "accuracy_ic95": [
+          0.6963,
+          0.7163
+        ],
+        "f1": 0.7017,
+        "tp": 3325,
+        "tn": 2326,
+        "fp": 1674,
+        "fn": 675,
+        "fpr": 0.4185,
+        "fnr": 0.1688,
+        "pct_pred_positivo": 0.6249
+      },
+      "Consenso": {
+        "accuracy": 0.7458,
+        "accuracy_ic95": [
+          0.7361,
+          0.7552
+        ],
+        "f1": 0.7455,
+        "tp": 3120,
+        "tn": 2846,
+        "fp": 1154,
+        "fn": 880,
+        "fpr": 0.2885,
+        "fnr": 0.22,
+        "pct_pred_positivo": 0.5343
+      }
+    },
+    "comparaciones": {
+      "Naive Bayes vs SVM": {
+        "a_acierta_b_falla": 477,
+        "a_falla_b_acierta": 433,
+        "p_valor": 0.15399228327362074
+      },
+      "Naive Bayes vs Random Forest": {
+        "a_acierta_b_falla": 1106,
+        "a_falla_b_acierta": 832,
+        "p_valor": 5.251348289962589e-10
+      },
+      "Consenso vs Naive Bayes": {
+        "a_acierta_b_falla": 303,
+        "a_falla_b_acierta": 262,
+        "p_valor": 0.09232328701101933
+      }
+    },
+    "acuerdo_3_de_3": 0.7146,
+    "kappa": {
+      "Naive Bayes · SVM": 0.7727,
+      "Naive Bayes · Random Forest": 0.5182,
+      "SVM · Random Forest": 0.5656
+    },
+    "negaciones": {
+      "modelo": "Naive Bayes",
+      "pct_tweets_con_negacion": 0.2395,
+      "n_con": 1916,
+      "n_sin": 6084,
+      "accuracy_con": 0.6905,
+      "accuracy_sin": 0.7564,
+      "chi2": 32.61,
+      "p_valor": 1.1273934574685388e-08,
+      "stop_words_negacion_eliminadas": [
+        "cannot",
+        "never",
+        "no",
+        "nobody",
+        "none",
+        "nor",
+        "not",
+        "nothing"
+      ]
+    }
+  },
+  "manual": {
+    "n": 359,
+    "n_neutros_excluidos": 139,
+    "modelos": {
+      "Naive Bayes": {
+        "accuracy": 0.7911,
+        "accuracy_ic95": [
+          0.7461,
+          0.8299
+        ],
+        "f1": 0.7911
+      },
+      "SVM": {
+        "accuracy": 0.7716,
+        "accuracy_ic95": [
+          0.7254,
+          0.812
+        ],
+        "f1": 0.7716
+      },
+      "Random Forest": {
+        "accuracy": 0.7075,
+        "accuracy_ic95": [
+          0.6585,
+          0.7522
+        ],
+        "f1": 0.6998
+      }
+    },
+    "marcas": {
+      "modelo": "Naive Bayes",
+      "min_tweets": 10,
+      "detalle": [
+        {
+          "marca": "kindle2",
+          "n": 17,
+          "pct_real": 0.9412,
+          "pct_pred": 0.8824
+        },
+        {
+          "marca": "obama",
+          "n": 10,
+          "pct_real": 0.9,
+          "pct_pred": 0.5
+        },
+        {
+          "marca": "\"night at the museum\"",
+          "n": 15,
+          "pct_real": 0.8,
+          "pct_pred": 1.0
+        },
+        {
+          "marca": "lebron",
+          "n": 18,
+          "pct_real": 0.7778,
+          "pct_pred": 0.7778
+        },
+        {
+          "marca": "nike",
+          "n": 15,
+          "pct_real": 0.7333,
+          "pct_pred": 0.6
+        },
+        {
+          "marca": "Malcolm Gladwell",
+          "n": 10,
+          "pct_real": 0.7,
+          "pct_pred": 0.7
+        },
+        {
+          "marca": "dentist",
+          "n": 12,
+          "pct_real": 0.25,
+          "pct_pred": 0.0
+        },
+        {
+          "marca": "at&t",
+          "n": 13,
+          "pct_real": 0.0,
+          "pct_pred": 0.3846
+        },
+        {
+          "marca": "gm",
+          "n": 16,
+          "pct_real": 0.0,
+          "pct_pred": 0.375
+        },
+        {
+          "marca": "time warner",
+          "n": 33,
+          "pct_real": 0.0,
+          "pct_pred": 0.0606
+        }
+      ],
+      "spearman_rho": 0.7547,
+      "spearman_p": 0.011644872504617378,
+      "mae": 0.1862
+    }
+  }
+}

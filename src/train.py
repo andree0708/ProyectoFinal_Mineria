@@ -104,6 +104,9 @@ def entrenar() -> dict:
 
     METRICS_PATH.write_text(json.dumps(resultados, indent=2), encoding="utf-8")
     print(f"Métricas guardadas en {METRICS_PATH}")
+
+    from src.analysis import generar as generar_analisis  # import tardío: analysis usa predict → train
+    generar_analisis()
     return resultados
 
 

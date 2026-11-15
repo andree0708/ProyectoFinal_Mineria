@@ -2,7 +2,12 @@
 
 Proyecto final en equipo (3 personas) sobre el dataset **Sentiment140** (`training.1600000.processed.noemoticon.csv`): 1.6 millones de tweets etiquetados como negativo (`target = 0`) o positivo (`target = 4`).
 
-Paleta: azul oscuro (`#06111f`, `#0d2744`), azul claro (`#3db8ff`, `#9ad8ff`) y acentos fosforescentes (`#39ffb0`, `#00f0ff`).
+Estilo visual **editorial claro**: fondo crema `#f7f3ec`, tinta `#1b1815`, positivo `#2a7f6f`, negativo `#d9573b`.
+Tipografías: **Fraunces** (títulos), **Inter** (texto), **JetBrains Mono** (números). Todo está en
+`static/css/style.css` como variables CSS; los gráficos usan **Apache ECharts** con el tema de `static/js/charts.js`.
+
+Las fuentes y ECharts están **alojados en el propio proyecto** (`static/fonts`, `static/vendor`). No se carga nada
+de Google Fonts ni de CDNs, así que no hay rastreo de terceros y la app funciona sin internet (útil para la presentación).
 
 ---
 
@@ -29,7 +34,8 @@ Paleta: azul oscuro (`#06111f`, `#0d2744`), azul claro (`#3db8ff`, `#9ad8ff`) y 
 - Métricas en conjunto de prueba: **Accuracy**, **F1**, precision, recall y **matriz de confusión**.
 - App Flask con:
   - Inicio (resumen de las 3 partes)
-  - Página de métricas
+  - Página de métricas (con fórmulas e IC 95 %)
+  - Página de análisis: hallazgos con su evidencia (McNemar, χ², kappa, Spearman, IC de Wilson)
   - Analizar un texto (clasificación con los 3 modelos y un consenso)
   - Rutas `/dashboard` y `/temporal` como marcadores para las partes 2 y 3
 
@@ -60,6 +66,7 @@ data/
   processed/   muestra_entrenamiento.csv: texto limpio + etiqueta + fecha + split (train/test)
   results/     metrics.json y salidas de la app (predicciones, exports)
 models/        modelos .joblib entrenados (no se suben a git)
+src/analysis.py   hallazgos + pruebas estadísticas → data/results/analisis.json (página /analisis)
 notebooks/     01_eda_y_evaluacion.ipynb: análisis exploratorio + evaluación (para informe/presentación)
 src/           pipeline: config, download, preprocessing, dataset, train, predict
 templates/, static/   frontend Flask

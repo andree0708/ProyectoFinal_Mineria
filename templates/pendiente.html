@@ -2,23 +2,21 @@
 {% block title %}Parte {{ parte }} pendiente{% endblock %}
 {% block content %}
 <section class="hero compact">
-  <p class="eyebrow">Aún no implementado</p>
-  <h1>Parte {{ parte }}{% if parte == 2 %} · Dashboard de sentimiento{% else %} · Análisis temporal{% endif %}</h1>
-  <p class="lead">Esta pantalla es un marcador para el compañero asignado. El detalle de lo que falta está en el README.</p>
+  <p class="eyebrow">Aún no implementado · Parte {{ parte }}</p>
+  <h1>{% if parte == 2 %}Dashboard de <em>sentimiento</em>{% else %}Análisis <em>temporal</em>{% endif %}</h1>
+  <p class="lead">Esta pantalla está reservada. El detalle de lo que falta está en el README.</p>
 </section>
 <article class="card">
+  <ul class="clean">
   {% if parte == 2 %}
-  <ul>
     <li>Cargar varios textos o un CSV</li>
-    <li>Gráficos de % positivo vs negativo</li>
-    <li>Comparar los tres modelos en el dashboard</li>
-  </ul>
+    <li>Distribución positivo vs negativo</li>
+    <li>Comparar los tres modelos</li>
   {% else %}
-  <ul>
     <li>Parsear la columna <code>date</code> del dataset</li>
-    <li>Gráfico de sentimiento por día / semana</li>
-    <li>Filtros de rango de fechas</li>
-  </ul>
+    <li>Sentimiento por día / semana / mes</li>
+    <li>Filtros de rango de fechas — ojo con el sesgo de recolección (ver <a href="{{ url_for('analisis') }}">Análisis, hallazgo 02</a>)</li>
   {% endif %}
+  </ul>
 </article>
 {% endblock %}

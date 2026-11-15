@@ -1,55 +1,74 @@
 {% extends "base.html" %}
-{% block title %}Parte 1 — Sentinel Blue{% endblock %}
+{% block title %}Inicio{% endblock %}
 {% block content %}
 <section class="hero">
-  <p class="eyebrow">Proyecto final · Análisis de sentimiento</p>
-  <h1>Clasificación de tweets con <span>Naive Bayes</span>, <span>SVM</span> y <span>Random Forest</span></h1>
+  <p class="eyebrow">Proyecto final · Minería de datos · Sentiment140</p>
+  <h1>¿Qué opina Twitter <em>de tu marca?</em></h1>
   <p class="lead">
-    Dataset Sentiment140 (1.6 millones de tweets). Esta es la <strong>Parte 1</strong>:
-    preprocesamiento de texto, entrenamiento de los tres modelos y métricas.
+    Clasificamos el sentimiento de tweets con tres algoritmos de minería de datos —
+    <strong>Naive Bayes</strong>, <strong>SVM</strong> y <strong>Random Forest</strong> — entrenados sobre
+    1.6 millones de tweets etiquetados, para medir la percepción de marcas y temas.
   </p>
   <div class="actions">
-    <a class="btn neon" href="{{ url_for('metricas') }}">Ver métricas</a>
-    <a class="btn ghost" href="{{ url_for('analizar') }}">Probar un texto</a>
+    <a class="btn" href="{{ url_for('analizar') }}">Analizar un texto</a>
+    <a class="btn ghost" href="{{ url_for('analisis') }}">Leer el análisis</a>
   </div>
 </section>
 
-<section class="grid-3">
-  <article class="card active">
-    <p class="tag">Parte 1 · lista</p>
-    <h2>Pipeline de ML</h2>
-    <ul>
-      <li>Limpieza de texto (URLs, menciones, signos)</li>
-      <li>TF-IDF + Naive Bayes, SVM y Random Forest</li>
-      <li>Accuracy, F1 y matriz de confusión</li>
-    </ul>
-  </article>
-  <article class="card muted">
-    <p class="tag">Parte 2 · compañero</p>
-    <h2>App + dashboard</h2>
-    <ul>
-      <li>Análisis masivo de textos</li>
-      <li>Dashboard de distribución de sentimiento</li>
-      <li>Comparación visual de modelos</li>
-    </ul>
-  </article>
-  <article class="card muted">
-    <p class="tag">Parte 3 · compañero</p>
-    <h2>Análisis temporal</h2>
-    <ul>
-      <li>Series de tiempo con la columna date</li>
-      <li>Filtros por periodo</li>
-      <li>Picos positivos y negativos</li>
-    </ul>
-  </article>
+{% if datos %}
+{% set mods = datos.modelos %}
+<section class="grid g4">
+  <div class="kpi"><small>Tweets en el dataset</small><b>{{ (analisis.dataset.n_tweets if analisis else 1600000)|miles }}</b><span>muestra de entrenamiento: {{ datos.n_muestra|miles }}</span></div>
+  <div class="kpi"><small>Mejor accuracy</small><b>{{ mods.values()|map(attribute='accuracy')|max|pct }}</b><span>en {{ datos.n_test|miles }} tweets de prueba</span></div>
+  <div class="kpi"><small>Mejor F1</small><b>{{ '%.3f'|format(mods.values()|map(attribute='f1')|max) }}</b><span>promedio ponderado por clase</span></div>
+  {% if analisis and analisis.manual %}
+  <div class="kpi"><small>Test etiquetado a mano</small><b>{{ analisis.manual.modelos.values()|map(attribute='accuracy')|max|pct }}</b><span>{{ analisis.manual.n }} tweets de marcas reales</span></div>
+  {% endif %}
+</section>
+{% endif %}
+
+<section class="section">
+  <h2>Cómo está construido</h2>
+  <div class="grid g3">
+    <article class="card">
+      <p class="eyebrow">Parte 1 · lista</p>
+      <h3>Pipeline de minería</h3>
+      <ul class="clean">
+        <li>Limpieza: URLs, menciones, hashtags, signos</li>
+        <li>TF-IDF con unigramas y bigramas</li>
+        <li>Naive Bayes · SVM lineal · Random Forest</li>
+        <li>Accuracy, F1, matriz de confusión y pruebas estadísticas</li>
+      </ul>
+    </article>
+    <article class="card dim">
+      <p class="eyebrow">Parte 2 · en curso</p>
+      <h3>App y dashboard</h3>
+      <ul class="clean">
+        <li>Análisis masivo de textos y CSV</li>
+        <li>Distribución de sentimiento</li>
+        <li>Comparación visual de los modelos</li>
+      </ul>
+    </article>
+    <article class="card dim">
+      <p class="eyebrow">Parte 3 · pendiente</p>
+      <h3>Análisis temporal</h3>
+      <ul class="clean">
+        <li>Sentimiento por día, semana o mes</li>
+        <li>Filtros de rango de fechas</li>
+        <li>Picos positivos y negativos</li>
+      </ul>
+    </article>
+  </div>
 </section>
 
-<section class="howto card">
-  <h2>Cómo arrancar la Parte 1</h2>
+{% if not listos %}
+<section class="section">
+  <h2>Primeros pasos</h2>
   <ol>
-    <li>Instala dependencias: <code>pip install -r requirements.txt</code></li>
-    <li>Entrena (unos minutos): <code>python -m src.train</code></li>
-    <li>Abre la web: <code>python app.py</code> y entra a <code>http://127.0.0.1:5000</code></li>
+    <li><code>pip install -r requirements.txt</code></li>
+    <li><code>python -m src.train</code> — descarga el dataset si falta, entrena y genera el análisis</li>
+    <li><code>python app.py</code> → <code>http://127.0.0.1:5000</code></li>
   </ol>
 </section>
+{% endif %}
 {% endblock %}

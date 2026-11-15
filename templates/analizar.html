@@ -1,38 +1,37 @@
 {% extends "base.html" %}
-{% block title %}Analizar texto — Parte 1{% endblock %}
+{% block title %}Analizar texto{% endblock %}
 {% block content %}
 <section class="hero compact">
-  <p class="eyebrow">Vista previa de la app</p>
-  <h1>Analiza un texto</h1>
-  <p class="lead">Clasificación con los tres modelos. El análisis masivo y el dashboard los completan las partes 2 y 3.</p>
+  <p class="eyebrow">Clasificador en vivo</p>
+  <h1>Analiza <em>un texto</em></h1>
+  <p class="lead">Escribe un tweet o una frase en inglés. Los tres modelos lo clasifican y se toma el voto de la mayoría.</p>
 </section>
 
-<form class="card form" method="post">
+<form class="card" method="post">
   <label for="texto">Tweet o frase</label>
-  <textarea id="texto" name="texto" rows="5" placeholder="I love this project, it is awesome!">{{ texto }}</textarea>
-  <button class="btn neon" type="submit">Clasificar</button>
+  <textarea id="texto" name="texto" rows="4" placeholder="I love my new Kindle, best purchase ever!">{{ texto }}</textarea>
+  <button class="btn" type="submit">Clasificar</button>
 </form>
 
-{% if error %}
-  <p class="error">{{ error }}</p>
-{% endif %}
+{% if error %}<p class="error" style="margin-top:16px">{{ error }}</p>{% endif %}
 
 {% if resultado %}
-<article class="card">
-  <p class="tag">Texto limpio</p>
-  <p class="clean">{{ resultado.texto_limpio }}</p>
-  <h2>Consenso: <span class="glow">{{ resultado.consenso }}</span></h2>
+<section class="section">
+  <p class="eyebrow">Consenso de los tres modelos</p>
+  <p class="verdict-big {{ 'pos-t' if resultado.consenso == 'Positivo' else 'neg-t' }}">{{ resultado.consenso }}</p>
+  <p class="muted">Texto tras el preprocesamiento: <code>{{ resultado.texto_limpio or '∅ (vacío)' }}</code></p>
   <div class="preds">
     {% for p in resultado.predicciones %}
     <div class="pred {{ p.sentimiento|lower }}">
       <h3>{{ p.modelo }}</h3>
       <p>{{ p.sentimiento }}</p>
       {% if p.confianza is not none %}
-        <small>Confianza {{ p.confianza }}</small>
+        <div class="bar"><i style="width:{{ (p.confianza * 100)|round(1) }}%"></i></div>
+        <small class="num muted">confianza {{ '%.2f'|format(p.confianza) }}</small>
       {% endif %}
     </div>
     {% endfor %}
   </div>
-</article>
+</section>
 {% endif %}
 {% endblock %}

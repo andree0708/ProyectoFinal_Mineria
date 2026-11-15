@@ -28,6 +28,7 @@ from src.config import (
     VECTORIZER_PATH,
 )
 from src.dataset import preparar_muestra
+from src.preprocessing import STOP_WORDS
 
 
 def construir_modelos() -> dict:
@@ -79,7 +80,7 @@ def entrenar() -> dict:
     vectorizer = TfidfVectorizer(
         max_features=MAX_FEATURES,
         ngram_range=NGRAM_RANGE,
-        stop_words="english",
+        stop_words=STOP_WORDS,
         min_df=2,
     )
     X_train_vec = vectorizer.fit_transform(X_train)

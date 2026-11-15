@@ -115,11 +115,7 @@ def analizar_modelos(vectorizer, modelos) -> dict:
     nombres = list(modelos)
     mejor = max(nombres, key=lambda n: por_modelo[n]["f1"])
 
-    # Negaciones: la lista de stop words de sklearn elimina not/no/nor, y "don't" queda "don".
-    con_negacion = test["text"].str.contains(NEGACION_RE).to_numpy()
-    p_mejor = preds[mejor]
-    acierta = p_mejor == y
-    chi2_neg, p_neg, _, _ = chi2_contingency(pd.crosstab(con_negacion, acierta))
+    negaciones = experimento_negaciones(muestra, test, y, mejor, preds[mejor])
     return {
         "n_test": int(len(y)),
         "mejor_individual": mejor,
@@ -132,18 +128,35 @@ def analizar_modelos(vectorizer, modelos) -> dict:
         "acuerdo_3_de_3": round(float((votos == votos[0]).all(0).mean()), 4),
         "kappa": {f"{a} · {b}": round(float(cohen_kappa_score(preds[a], preds[b])), 4)
                   for i, a in enumerate(nombres) for b in nombres[i + 1:]},
-        "negaciones": {
-            "modelo": mejor,
-            "pct_tweets_con_negacion": round(float(con_negacion.mean()), 4),
-            "n_con": int(con_negacion.sum()),
-            "n_sin": int((~con_negacion).sum()),
-            "accuracy_con": round(float(accuracy_score(y[con_negacion], p_mejor[con_negacion])), 4),
-            "accuracy_sin": round(float(accuracy_score(y[~con_negacion], p_mejor[~con_negacion])), 4),
-            "chi2": round(float(chi2_neg), 2),
-            "p_valor": float(p_neg),
-            "stop_words_negacion_eliminadas": sorted({"not", "no", "nor", "never", "nothing", "none",
-                                                      "cannot", "nobody"} & set(vectorizer.get_stop_words())),
-        },
+        "negaciones": negaciones,
+    }
+
+
+def experimento_negaciones(muestra, test, y, mejor, pred_actual) -> dict:
+    """Ablación: mismo modelo y mismos datos, pero con el preprocesamiento original
+    (sin expandir contracciones y con la lista de stop words que elimina negaciones)."""
+    from sklearn.feature_extraction.text import TfidfVectorizer
+
+    from src.config import MAX_FEATURES, NGRAM_RANGE
+    from src.train import construir_modelos
+
+    train = muestra[muestra["split"] == "train"]
+    limpio_v1 = lambda s: s.map(lambda t: limpiar_texto(t, negaciones=False))
+    vec_v1 = TfidfVectorizer(max_features=MAX_FEATURES, ngram_range=NGRAM_RANGE, stop_words="english", min_df=2)
+    modelo_v1 = construir_modelos()[mejor].fit(vec_v1.fit_transform(limpio_v1(train["text"])), train["label"])
+    pred_v1 = modelo_v1.predict(vec_v1.transform(limpio_v1(test["text"])))
+
+    con = test["text"].str.contains(NEGACION_RE).to_numpy()
+    acc = lambda p, m=slice(None): round(float(accuracy_score(y[m], p[m])), 4)
+    return {
+        "modelo": mejor,
+        "pct_tweets_con_negacion": round(float(con.mean()), 4),
+        "n_con": int(con.sum()),
+        "n_sin": int((~con).sum()),
+        "antes": {"accuracy": acc(pred_v1), "accuracy_con": acc(pred_v1, con), "accuracy_sin": acc(pred_v1, ~con)},
+        "despues": {"accuracy": acc(pred_actual), "accuracy_con": acc(pred_actual, con), "accuracy_sin": acc(pred_actual, ~con)},
+        "mcnemar_total": mcnemar(y, pred_actual, pred_v1),
+        "mcnemar_con_negacion": mcnemar(y[con], pred_actual[con], pred_v1[con]),
     }
 
 

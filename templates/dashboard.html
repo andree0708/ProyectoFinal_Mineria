@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<section class="hero compact">
+  <h1>Dashboard de sentimiento</h1>
+  <p class="lead">Resumen de la clasificación de sentimiento y del rendimiento de cada modelo sobre el conjunto de datos seleccionado.</p>
+</section>
+
+<div class="source">
+  <p>{{ fuentes[fuente].descripcion }}</p>
+  <nav class="tabs" aria-label="Conjunto de datos">
+    {% for clave, f in fuentes.items() %}
+      <a href="{{ url_for('dashboard', fuente=clave) }}" class="{{ 'on' if clave == fuente }}">{{ f.nombre }}</a>
+    {% endfor %}
+    <button type="button" disabled title="Disponible próximamente" style="opacity:.45;cursor:not-allowed">Tus datos</button>
+  </nav>
+</div>
+
+{% if not r %}
+  <article class="card"><p>Los datos de este panel todavía no están disponibles.</p></article>
+{% else %}
+{% set con_etiquetas = r.metricas is defined %}
+{% set cons = r.metricas['Consenso'] if con_etiquetas else none %}
+{% set mejor = r.metricas[r.mejor_modelo] if con_etiquetas else none %}
+{% set pos = r.pct_positivo_pred['Consenso'] %}
+{% set nombre_modelo = {'Consenso': 'Votación'} %}
+
+<!-- KPIs --------------------------------------------------------------- -->
+<section class="kpis">
+  <div class="kpi">
+    <small>Tweets analizados</small>
+    <b>{{ r.n|miles }}</b>
+    <span>{{ fuentes[fuente].nombre }}</span>
+  </div>
+  <div class="kpi">
+    <small>Sentimiento positivo</small>
+    <b class="pos-t">{{ pos|pct }}</b>
+    <div class="meter" title="Positivo {{ pos|pct }} · Negativo {{ (1 - pos)|pct }}"><i style="width:{{ pos * 100 }}%"></i></div>
+    <span>{% if con_etiquetas %}Valor real: {{ r.pct_positivo_real|pct }}{% else %}Estimado por votación{% endif %}</span>
+  </div>
+  {% if con_etiquetas %}
+  <div class="kpi">
+    <small>Accuracy por votación</small>
+    <b>{{ cons.accuracy|pct }}</b>
+    <span>F1 {{ '%.3f'|format(cons.f1) }} · los tres modelos combinados</span>
+  </div>
+  <div class="kpi">
+    <small>Mejor modelo individual</small>
+    <b class="txt">{{ r.mejor_modelo }}</b>
+    <span>Accuracy {{ mejor.accuracy|pct }} · F1 {{ '%.3f'|format(mejor.f1) }}</span>
+  </div>
+  {% endif %}
+  <div class="kpi">
+    <small>Acuerdo unánime</small>
+    <b>{{ r.acuerdo.pct_unanime|pct }}</b>
+    <span>Tweets en los que coinciden los tres modelos</span>
+  </div>
+</section>
+
+<!-- Distribución y rendimiento ----------------------------------------- -->
+<div class="panels p-12">
+  <section class="panel">
+    <h3>Distribución del sentimiento</h3>
+    <p class="hint">{% if con_etiquetas %}Anillo exterior: estimación por votación. Anillo interior: etiqueta real.{% else %}Estimación por votación de los tres modelos.{% endif %}</p>
+    <div id="ch-dist" class="chart"></div>
+  </section>
+  {% if con_etiquetas %}
+  <section class="panel">
+    <h3>Rendimiento por modelo</h3>
+    <p class="hint">Valores entre 0 y 1. El eje comienza en 0.50, el resultado que se obtendría al azar.</p>
+    <div id="ch-rend" class="chart"></div>
+  </section>
+  {% endif %}
+</div>
+
+{% if r.grupos %}
+<section class="panel" style="margin-bottom:18px">
+  <h3>Sentimiento por marca o tema</h3>
+  <p class="hint">Porcentaje de tweets positivos según la etiqueta real y según la votación de los modelos. Entre paréntesis, el número de tweets.</p>
+  <div id="ch-grupos" class="chart tall"></div>
+</section>
+{% endif %}
+
+<!-- Matriz y acuerdo ---------------------------------------------------- -->
+<div class="panels p-2">
+  {% if con_etiquetas %}
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h3>Matriz de confusión</h3>
+        <p class="hint">Filas: clase real. Columnas: clase estimada.</p>
+      </div>
+      <div class="tabs small" role="tablist" id="cm-tabs">
+        {% for nombre in r.modelos %}
+          <button type="button" data-cm="{{ loop.index }}" class="{{ 'on' if nombre == 'Consenso' }}">{{ nombre_modelo.get(nombre, nombre) }}</button>
+        {% endfor %}
+      </div>
+    </div>
+    {% for nombre in r.modelos %}
+      {% set cm = r.metricas[nombre].matriz_confusion %}
+      {% set tn, fp, fn, tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1] %}
+      <div class="cm-view" data-cm="{{ loop.index }}" {{ 'hidden' if nombre != 'Consenso' }}>
+        <div class="cm" style="margin-top:14px">
+          <span></span><span>Estimado negativo</span><span>Estimado positivo</span>
+          <span>Negativo</span>
+          <b class="ok" style="--a:{{ '%.2f'|format(tn / (tn + fp) * 0.8) }}">{{ tn|miles }}</b>
+          <b class="ko" style="--a:{{ '%.2f'|format(fp / (tn + fp) * 0.8) }}">{{ fp|miles }}</b>
+          <span>Positivo</span>
+          <b class="ko" style="--a:{{ '%.2f'|format(fn / (fn + tp) * 0.8) }}">{{ fn|miles }}</b>
+          <b class="ok" style="--a:{{ '%.2f'|format(tp / (fn + tp) * 0.8) }}">{{ tp|miles }}</b>
+        </div>
+        <div class="stats" style="margin-top:16px">
+          <div class="stat"><small>Accuracy</small><b>{{ '%.3f'|format(r.metricas[nombre].accuracy) }}</b></div>
+          <div class="stat"><small>Precisión</small><b>{{ '%.3f'|format(r.metricas[nombre].precision) }}</b></div>
+          <div class="stat"><small>Recall</small><b>{{ '%.3f'|format(r.metricas[nombre].recall) }}</b></div>
+          <div class="stat"><small>F1</small><b>{{ '%.3f'|format(r.metricas[nombre].f1) }}</b></div>
+        </div>
+      </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+  <section class="panel">
+    <h3>Acuerdo entre modelos</h3>
+    <p class="hint">Cuántos tweets reciben la misma clasificación de los tres modelos y cuántos dividen la votación.</p>
+    <div id="ch-acuerdo" class="chart"></div>
+  </section>
+</div>
+
+<!-- Sesgo y seguridad --------------------------------------------------- -->
+<div class="panels p-2">
+  <section class="panel">
+    <h3>Tweets positivos según cada modelo</h3>
+    <p class="hint">{% if con_etiquetas %}La línea marca el porcentaje real. Una barra más larga indica tendencia a clasificar como positivo.{% else %}Porcentaje de tweets que cada modelo clasifica como positivos.{% endif %}</p>
+    <div id="ch-sesgo" class="chart"></div>
+  </section>
+  {% if r.confianza %}
+  <section class="panel">
+    <h3>Seguridad de la clasificación</h3>
+    <p class="hint">Probabilidad de sentimiento positivo según Naive Bayes. Cerca de los extremos, el modelo está más seguro. El {{ r.confianza.pct_seguro|pct(0) }} de los tweets está por debajo del 20 % o por encima del 80 %.</p>
+    <div id="ch-conf" class="chart"></div>
+  </section>
+  {% endif %}
+</div>
+
+<!-- Términos ------------------------------------------------------------ -->
+<section class="panel">
+  <h3>Términos más asociados a cada sentimiento</h3>
+  <p class="hint">Palabras y expresiones que aparecen con más frecuencia en un sentimiento que en el otro, según la clasificación por votación.</p>
+  <div id="ch-terminos" class="chart tall"></div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if r %}
+<script src="{{ url_for('static', filename='vendor/echarts.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+  const R = {{ r|tojson }};
+  const T = SentinelCharts;
+  const pct = v => (v * 100).toFixed(1) + " %";
+  const etiqueta = n => n === "Consenso" ? "Votación" : n;
+  const individuales = R.modelos.filter(n => n !== "Consenso");
+
+  // Distribución: anillo exterior estimado, interior real
+  const pos = R.pct_positivo_pred.Consenso;
+  const anillo = (nombre, p, radio, opacidad) => ({
+    name: nombre, type: "pie", radius: radio, center: ["50%", "54%"], avoidLabelOverlap: true,
+    label: { show: false }, itemStyle: { borderColor: T.c.card, borderWidth: 2, opacity: opacidad },
+    data: [
+      { name: "Positivo", value: Math.round(p * R.n), itemStyle: { color: T.c.pos } },
+      { name: "Negativo", value: R.n - Math.round(p * R.n), itemStyle: { color: T.c.neg } },
+    ],
+  });
+  const series = [anillo("Estimado", pos, ["62%", "82%"], 1)];
+  if ("pct_positivo_real" in R) series.push(anillo("Real", R.pct_positivo_real, ["40%", "56%"], .55));
+  T.render("ch-dist", {
+    tooltip: { trigger: "item", formatter: p => `${p.seriesName} · ${p.name}<br><b>${p.value.toLocaleString("es")}</b> (${p.percent.toFixed(1)} %)` },
+    legend: { top: 0, data: ["Positivo", "Negativo"] },
+    title: { text: (pos * 100).toFixed(1) + " %", subtext: "positivo", left: "center", top: "45%",
+             textStyle: { fontFamily: "JetBrains Mono", fontSize: 20, fontWeight: 500, color: T.c.pos },
+             subtextStyle: { fontFamily: "Inter", color: T.c.ink3 }, itemGap: 2 },
+    series,
+  });
+
+  // Rendimiento por modelo
+  if (R.metricas) {
+    const metricas = [["accuracy", "Accuracy"], ["f1", "F1"], ["precision", "Precisión"], ["recall", "Recall"]];
+    const colores = { "Naive Bayes": T.c.info, "SVM": T.c.pos, "Random Forest": T.c.ink3, "Consenso": T.c.ink };
+    T.render("ch-rend", {
+      tooltip: { trigger: "axis", valueFormatter: v => v.toFixed(3) },
+      legend: { top: 0, data: R.modelos.map(etiqueta) },
+      grid: { left: 44, right: 16, top: 44, bottom: 28 },
+      xAxis: { type: "category", data: metricas.map(m => m[1]) },
+      yAxis: { type: "value", min: 0.5, interval: 0.05, axisLabel: { formatter: v => v.toFixed(2) },
+               max: Math.ceil(Math.max(...R.modelos.flatMap(n => metricas.map(m => R.metricas[n][m[0]]))) * 20 + 0.001) / 20 },
+      series: R.modelos.map((n, i) => ({
+        name: etiqueta(n), type: "bar", barGap: "12%", itemStyle: { color: colores[n], borderRadius: [2, 2, 0, 0] },
+        data: metricas.map(m => R.metricas[n][m[0]]),
+      })),
+    });
+  }
+
+  // Sentimiento por marca
+  if (R.grupos) {
+    const g = R.grupos.slice().reverse();
+    const conReal = "pct_real" in g[0];
+    T.render("ch-grupos", {
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, valueFormatter: v => Math.round(v * 100) + " %" },
+      legend: { top: 0 },
+      grid: { left: 16, right: 30, top: 40, bottom: 30, containLabel: true },
+      yAxis: { type: "category", data: g.map(d => d.grupo + "  (" + d.n + ")") },
+      xAxis: { type: "value", min: 0, max: 1, axisLabel: { formatter: v => Math.round(v * 100) + " %" } },
+      series: [
+        ...(conReal ? [{ type: "custom", silent: true, z: 1, data: g.map(d => [d.pct_real, d.pct_pred]), renderItem: (p, api) => {
+            const a = api.coord([api.value(0), p.dataIndex]), b = api.coord([api.value(1), p.dataIndex]);
+            return { type: "line", shape: { x1: a[0], y1: a[1], x2: b[0], y2: b[1] }, style: { stroke: T.c.rule, lineWidth: 3 } };
+          } },
+          { name: "Positivos reales", type: "scatter", symbolSize: 13, data: g.map(d => d.pct_real), itemStyle: { color: T.c.ink }, z: 3 }] : []),
+        { name: "Positivos estimados", type: "scatter", symbolSize: 13, data: g.map(d => d.pct_pred), itemStyle: { color: T.c.pos }, z: 2 },
+      ],
+    });
+  }
+
+  // Acuerdo entre modelos
+  const ac = R.acuerdo;
+  T.render("ch-acuerdo", {
+    tooltip: { trigger: "item", formatter: p => `${p.name}<br><b>${p.value.toLocaleString("es")}</b> (${p.percent.toFixed(1)} %)` },
+    legend: { bottom: 0 },
+    series: [{
+      type: "pie", radius: ["45%", "72%"], center: ["50%", "46%"], padAngle: 1,
+      itemStyle: { borderRadius: 3 },
+      label: { formatter: p => p.percent.toFixed(0) + " %", fontFamily: "JetBrains Mono", color: T.c.ink2 },
+      data: [
+        { name: "Los tres: positivo", value: ac.unanime_positivo, itemStyle: { color: T.c.pos } },
+        { name: "Los tres: negativo", value: ac.unanime_negativo, itemStyle: { color: T.c.neg } },
+        { name: "Votación dividida", value: ac.dividido, itemStyle: { color: T.c.highlight } },
+      ],
+    }],
+  });
+
+  // Tweets positivos por modelo
+  T.render("ch-sesgo", {
+    tooltip: { trigger: "axis", valueFormatter: pct },
+    grid: { left: 110, right: 56, top: 30, bottom: 28 },
+    yAxis: { type: "category", data: R.modelos.map(etiqueta), inverse: true },
+    xAxis: { type: "value", min: 0, max: 1, axisLabel: { formatter: v => Math.round(v * 100) + " %" } },
+    series: [{
+      type: "bar", barWidth: "55%",
+      data: R.modelos.map(n => ({ value: R.pct_positivo_pred[n], itemStyle: { color: n === "Consenso" ? T.c.ink : T.c.pos, borderRadius: [0, 2, 2, 0] } })),
+      label: { show: true, position: "insideRight", formatter: p => pct(p.value), color: "#fff", fontFamily: "JetBrains Mono", fontSize: 11 },
+      markLine: "pct_positivo_real" in R ? { symbol: "none", silent: true, data: [{ xAxis: R.pct_positivo_real }],
+        lineStyle: { color: T.c.neg, type: "dashed", width: 1.5 },
+        label: { formatter: p => "Real " + pct(p.value), color: T.c.neg, position: "start", fontFamily: "Inter" } } : undefined,
+    }],
+  });
+
+  // Seguridad de la clasificación
+  if (R.confianza) {
+    const n = R.confianza.conteo.length;
+    T.render("ch-conf", {
+      tooltip: { trigger: "axis", formatter: p => `Probabilidad ${p[0].name}<br><b>${p[0].value.toLocaleString("es")}</b> tweets` },
+      grid: { left: 50, right: 16, top: 16, bottom: 44 },
+      xAxis: { type: "category", data: R.confianza.bins, name: "Probabilidad de positivo", nameLocation: "middle", nameGap: 30,
+               axisLabel: { interval: 1 } },
+      yAxis: { type: "value", axisLabel: { formatter: v => v.toLocaleString("es") } },
+      series: [{
+        type: "bar", barCategoryGap: "8%",
+        data: R.confianza.conteo.map((v, i) => ({ value: v, itemStyle: { color: i < n / 2 ? T.c.neg : T.c.pos, opacity: 0.35 + 0.65 * Math.abs(i - (n - 1) / 2) / ((n - 1) / 2), borderRadius: [2, 2, 0, 0] } })),
+      }],
+    });
+  }
+
+  // Términos
+  const tp = R.terminos.positivo, tn = R.terminos.negativo;
+  const filas = Math.max(tp.length, tn.length);
+  T.render("ch-terminos", {
+    tooltip: { trigger: "item", formatter: p => `<b>${p.name}</b><br>${p.data.n.toLocaleString("es")} apariciones` },
+    grid: [{ left: 8, width: "42%", top: 30, bottom: 10, containLabel: true }, { right: 8, width: "42%", top: 30, bottom: 10, containLabel: true }],
+    title: [{ text: "Negativo", left: "4%", top: 0, textStyle: { fontFamily: "Inter", fontSize: 13, color: T.c.neg } },
+            { text: "Positivo", right: "4%", top: 0, textStyle: { fontFamily: "Inter", fontSize: 13, color: T.c.pos } }],
+    xAxis: [{ type: "value", gridIndex: 0, inverse: true, show: false }, { type: "value", gridIndex: 1, show: false }],
+    yAxis: [
+      { type: "category", gridIndex: 0, position: "right", inverse: true, data: tn.map(t => t.termino), axisLine: { show: false }, axisLabel: { fontFamily: "Inter", fontSize: 12, color: T.c.ink } },
+      { type: "category", gridIndex: 1, position: "left", inverse: true, data: tp.map(t => t.termino), axisLine: { show: false }, axisLabel: { fontFamily: "Inter", fontSize: 12, color: T.c.ink } },
+    ],
+    series: [
+      { type: "bar", xAxisIndex: 0, yAxisIndex: 0, barWidth: "60%", data: tn.map(t => ({ name: t.termino, value: t.peso, n: t.n })), itemStyle: { color: T.c.neg, borderRadius: [2, 0, 0, 2] } },
+      { type: "bar", xAxisIndex: 1, yAxisIndex: 1, barWidth: "60%", data: tp.map(t => ({ name: t.termino, value: t.peso, n: t.n })), itemStyle: { color: T.c.pos, borderRadius: [0, 2, 2, 0] } },
+    ],
+  });
+
+  // Selector de matriz de confusión
+  document.querySelectorAll("#cm-tabs button").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("#cm-tabs button").forEach(x => x.classList.toggle("on", x === b));
+    document.querySelectorAll(".cm-view").forEach(v => v.hidden = v.dataset.cm !== b.dataset.cm);
+  }));
+</script>
+{% endif %}
+{% endblock %}

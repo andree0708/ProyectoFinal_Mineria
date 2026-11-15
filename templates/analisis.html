@@ -2,27 +2,21 @@
 {% block title %}Análisis{% endblock %}
 {% block content %}
 <section class="hero compact">
-  <p class="eyebrow">Hallazgos · con la evidencia que los soporta</p>
-  <h1>Lo que dicen <em>los datos</em></h1>
+  <h1>Análisis de resultados</h1>
   <p class="lead">
-    Cada conclusión viene con las métricas y la prueba estadística que la respaldan. Una diferencia se
-    considera <strong>significativa</strong> si su p-valor es menor que <span class="num">0.05</span>.
-    Los números se recalculan cada vez que se entrena (<code>python -m src.analysis</code>).
+    Principales hallazgos sobre los datos y los modelos. Cada conclusión incluye las métricas y la prueba
+    estadística que la respaldan. Una diferencia se considera significativa cuando su p-valor es menor que 0.05.
   </p>
 </section>
 
 {% if not a %}
-  <article class="card">
-    <h3>Aún no hay análisis</h3>
-    <p>Ejecuta <code>python -m src.train</code> (o <code>python -m src.analysis</code> si ya entrenaste).</p>
-  </article>
+  <article class="card"><p>El análisis todavía no está disponible.</p></article>
 {% else %}
 {% set d = a.dataset %}
 {% set st = d.sesgo_temporal %}
 {% set mm = a.modelos %}
 {% set M = mm.modelos %}
 {% set best = mm.mejor_individual %}
-{% set otro = 'SVM' if best == 'Naive Bayes' else 'Naive Bayes' %}
 {% set cmp_nb_svm = mm.comparaciones['Naive Bayes vs SVM'] %}
 {% set cmp_rf = mm.comparaciones[best ~ ' vs Random Forest'] %}
 {% set cmp_cons = mm.comparaciones['Consenso vs ' ~ best] %}
@@ -33,25 +27,25 @@
   <div class="idx">01</div>
   <div>
     <span class="verdict nosig">Contexto</span>
-    <h2>Un dataset balanceado, de tweets cortos y etiquetas automáticas</h2>
+    <h2>Un conjunto de datos equilibrado</h2>
     <p>
-      Sentiment140 tiene <strong>{{ d.n_tweets|miles }} tweets</strong> de {{ d.n_usuarios|miles }} usuarios,
-      exactamente la mitad positivos y la mitad negativos. Esto hace que la <em>accuracy</em> sea una métrica
-      justa: un clasificador al azar acertaría el 50 %. Los tweets son cortos (≈{{ d.palabras_media.negativo|round|int }}
-      palabras), lo que deja poco contexto a cada modelo.
+      Sentiment140 contiene {{ d.n_tweets|miles }} tweets de {{ d.n_usuarios|miles }} usuarios, con la misma
+      cantidad de mensajes positivos y negativos. Por eso la accuracy es una medida representativa: un clasificador
+      que respondiera al azar acertaría alrededor del 50 %. Los mensajes son breves, con unas
+      {{ d.palabras_media.negativo|round|int }} palabras de media.
     </p>
     <p>
-      Las etiquetas <strong>no son manuales</strong>: se asignaron por los emoticonos <code>:)</code> y
-      <code>:(</code>, que luego se quitaron del texto (<em>supervisión distante</em>). Ese ruido en las etiquetas
-      limita la accuracy alcanzable con modelos clásicos a un rango de 75–80 %.
+      Las etiquetas se asignaron automáticamente a partir de los emoticonos de cada mensaje, que después se
+      eliminaron del texto. Este método introduce cierto margen de error en las etiquetas, por lo que los resultados
+      habituales con modelos clásicos se sitúan entre el 75 % y el 80 % de accuracy.
     </p>
     <div class="evidence">
-      <p class="eyebrow">Evidencia</p>
+      <p class="label">Datos del conjunto</p>
       <div class="stats">
         <div class="stat"><small>Tweets</small><b>{{ d.n_tweets|miles }}</b></div>
-        <div class="stat"><small>% positivos</small><b>{{ d.pct_positivo|pct }}</b></div>
-        <div class="stat"><small>Palabras promedio (neg / pos)</small><b>{{ d.palabras_media.negativo }} / {{ d.palabras_media.positivo }}</b></div>
-        <div class="stat"><small>Línea base (azar)</small><b>50.0%</b></div>
+        <div class="stat"><small>Positivos</small><b>{{ d.pct_positivo|pct }}</b></div>
+        <div class="stat"><small>Palabras por tweet, negativos</small><b>{{ d.palabras_media.negativo }}</b></div>
+        <div class="stat"><small>Palabras por tweet, positivos</small><b>{{ d.palabras_media.positivo }}</b></div>
       </div>
     </div>
   </div>
@@ -61,65 +55,67 @@
 <article class="finding">
   <div class="idx">02</div>
   <div>
-    <span class="verdict warn">Sesgo de muestreo · {{ st.p_valor|pval }}</span>
-    <h2>El tiempo en este dataset no refleja la opinión real</h2>
+    <span class="verdict warn">Sesgo de recolección · {{ st.p_valor|pval }}</span>
+    <h2>La distribución temporal refleja la recolección, no la opinión</h2>
     <p>
-      Los tweets cubren del {{ d.fecha_min }} al {{ d.fecha_max }}, pero solo hay datos en
-      <strong>{{ d.n_dias_con_datos }} de {{ d.n_dias_rango }} días</strong>. Además, hasta el {{ st.corte }} la
-      proporción de positivos ronda el <strong>{{ st.pct_positivo_antes|pct(0) }}</strong>, y a partir de esa fecha
-      es <strong>{{ st.pct_positivo_despues|pct(0) }}</strong>: todos los tweets son negativos.
+      Los tweets abarcan del {{ d.fecha_min|fecha }} al {{ d.fecha_max|fecha }}, con datos en
+      {{ d.n_dias_con_datos }} de esos {{ d.n_dias_rango }} días. Hasta el {{ st.corte|fecha(-1) }}, la proporción
+      de mensajes positivos se mantiene en torno al {{ st.pct_positivo_antes|pct(0) }}. A partir del
+      {{ st.corte|fecha }}, todos los mensajes son negativos.
     </p>
     <p>
-      Un cambio tan brusco no es un cambio de opinión pública, sino el resultado de cómo se recolectaron los datos.
-      <mark>Cualquier análisis temporal sobre Sentiment140 debe advertirlo</mark>, o mostrará un desplome de
-      sentimiento que no existió.
+      Este cambio se debe a la forma en que se construyó el dataset. Las comparaciones entre fechas anteriores al
+      {{ st.corte|fecha(0, false) }} sirven como referencia; los días posteriores no representan la opinión de ese periodo.
     </p>
     <div class="evidence">
-      <p class="eyebrow">Evidencia · prueba χ² de independencia (periodo × sentimiento)</p>
+      <p class="label">Prueba de independencia entre periodo y sentimiento</p>
       <div class="stats">
-        <div class="stat"><small>% positivo antes del {{ st.corte }}</small><b class="pos-t">{{ st.pct_positivo_antes|pct }}</b></div>
-        <div class="stat"><small>% positivo desde el {{ st.corte }}</small><b class="neg-t">{{ st.pct_positivo_despues|pct }}</b></div>
-        <div class="stat"><small>χ² (1 g.l.)</small><b>{{ st.chi2|miles }}</b></div>
-        <div class="stat"><small>V de Cramér</small><b>{{ '%.3f'|format(st.cramer_v) }}</b></div>
+        <div class="stat"><small>Positivos hasta el {{ st.corte|fecha(-1, false) }}</small><b class="pos-t">{{ st.pct_positivo_antes|pct }}</b></div>
+        <div class="stat"><small>Positivos desde el {{ st.corte|fecha(0, false) }}</small><b class="neg-t">{{ st.pct_positivo_despues|pct }}</b></div>
+        <div class="stat"><small>Estadístico \(\chi^2\)</small><b>{{ st.chi2|miles }}</b></div>
+        <div class="stat"><small>V de Cramér</small><b>{{ '%.3f'|format(st.cramer_v) }}</b><small class="sub">0 sin relación, más de 0.3 relación fuerte</small></div>
       </div>
-      <div class="formula"><b>χ²</b> = Σ (observado − esperado)² / esperado   → {{ st.p_valor|pval }}
-<b>V</b> = √(χ² / N) = √({{ st.chi2 }} / {{ d.n_tweets }}) = <b>{{ '%.3f'|format(st.cramer_v) }}</b>   (0 = sin relación, &gt;0.3 = asociación fuerte)</div>
+      <dl class="math">
+        <dt>Chi cuadrado</dt>
+        <dd>\(\displaystyle \chi^2 = \sum_{i} \frac{(O_i - E_i)^2}{E_i}\)<small>Compara los conteos observados \(O_i\) con los esperados \(E_i\) si el sentimiento no dependiera del periodo.</small></dd>
+        <dt>V de Cramér</dt>
+        <dd>\(\displaystyle V = \sqrt{\frac{\chi^2}{N}} = \sqrt{\frac{ {{ st.chi2 }} }{ {{ d.n_tweets }} }} = {{ '%.3f'|format(st.cramer_v) }}\)</dd>
+      </dl>
       <div id="ch-temporal" class="chart"></div>
     </div>
   </div>
 </article>
 
 <!-- 03 ------------------------------------------------------------------ -->
+{% set empate = cmp_nb_svm.p_valor >= 0.05 %}
 <article class="finding">
   <div class="idx">03</div>
   <div>
-    <span class="verdict {{ 'nosig' if cmp_nb_svm.p_valor >= 0.05 else 'sig' }}">
-      {{ 'Empate estadístico' if cmp_nb_svm.p_valor >= 0.05 else 'Diferencia significativa' }} · {{ cmp_nb_svm.p_valor|pval }}
-    </span>
-    <h2>Naive Bayes y SVM {{ 'empatan' if cmp_nb_svm.p_valor >= 0.05 else 'no rinden igual' }}</h2>
+    <span class="verdict {{ 'nosig' if empate else 'sig' }}">{{ 'Sin diferencia significativa' if empate else 'Diferencia significativa' }} · {{ cmp_nb_svm.p_valor|pval }}</span>
+    <h2>{{ 'Naive Bayes y SVM obtienen resultados equivalentes' if empate else 'Naive Bayes y SVM difieren en rendimiento' }}</h2>
     <p>
-      Naive Bayes obtiene una accuracy de <strong>{{ M['Naive Bayes'].accuracy|pct(2) }}</strong> y SVM de
-      <strong>{{ M['SVM'].accuracy|pct(2) }}</strong>.
-      {% if cmp_nb_svm.p_valor >= 0.05 %}
-      Los intervalos de confianza se solapan y la prueba de McNemar no encuentra diferencia significativa: con
-      estos datos <strong>no se puede afirmar que uno sea mejor que el otro</strong>. Ambos son modelos lineales
-      sobre TF-IDF, y con texto corto y disperso eso funciona muy bien.
+      Naive Bayes alcanza una accuracy de {{ M['Naive Bayes'].accuracy|pct(2) }} y SVM de {{ M['SVM'].accuracy|pct(2) }}.
+      {% if empate %}
+      Sus intervalos de confianza se solapan y la prueba de McNemar no encuentra una diferencia significativa,
+      por lo que ambos modelos pueden considerarse equivalentes para esta tarea.
       {% else %}
       La prueba de McNemar indica que la diferencia es significativa.
       {% endif %}
     </p>
     <div class="evidence">
-      <p class="eyebrow">Evidencia · prueba exacta de McNemar sobre los mismos {{ mm.n_test|miles }} tweets</p>
+      <p class="label">Prueba de McNemar sobre los mismos {{ mm.n_test|miles }} tweets</p>
       <div class="stats">
-        <div class="stat"><small>Accuracy NB · IC 95 %</small><b>{{ '%.3f'|format(M['Naive Bayes'].accuracy) }}</b><small class="num">[{{ M['Naive Bayes'].accuracy_ic95|join(', ') }}]</small></div>
-        <div class="stat"><small>Accuracy SVM · IC 95 %</small><b>{{ '%.3f'|format(M['SVM'].accuracy) }}</b><small class="num">[{{ M['SVM'].accuracy_ic95|join(', ') }}]</small></div>
-        <div class="stat"><small>Solo NB acierta (b)</small><b>{{ cmp_nb_svm.a_acierta_b_falla }}</b></div>
-        <div class="stat"><small>Solo SVM acierta (c)</small><b>{{ cmp_nb_svm.a_falla_b_acierta }}</b></div>
+        <div class="stat"><small>Accuracy de Naive Bayes</small><b>{{ '%.3f'|format(M['Naive Bayes'].accuracy) }}</b><small class="sub num">IC 95 %: {{ M['Naive Bayes'].accuracy_ic95|join(' a ') }}</small></div>
+        <div class="stat"><small>Accuracy de SVM</small><b>{{ '%.3f'|format(M['SVM'].accuracy) }}</b><small class="sub num">IC 95 %: {{ M['SVM'].accuracy_ic95|join(' a ') }}</small></div>
+        <div class="stat"><small>Solo acierta Naive Bayes</small><b>{{ cmp_nb_svm.a_acierta_b_falla }}</b></div>
+        <div class="stat"><small>Solo acierta SVM</small><b>{{ cmp_nb_svm.a_falla_b_acierta }}</b></div>
       </div>
-      <div class="formula">McNemar solo mira los tweets donde los modelos <b>discrepan</b>.
-H₀: b y c son igual de probables → b ~ Binomial(b + c, 0.5)
-b = {{ cmp_nb_svm.a_acierta_b_falla }}, c = {{ cmp_nb_svm.a_falla_b_acierta }}, n = {{ cmp_nb_svm.a_acierta_b_falla + cmp_nb_svm.a_falla_b_acierta }}  →  <b>{{ cmp_nb_svm.p_valor|pval }}</b>
-<b>Kappa de Cohen</b> NB·SVM = {{ mm.kappa['Naive Bayes · SVM'] }}  (acuerdo entre predicciones; 1 = idénticas)</div>
+      <dl class="math">
+        <dt>McNemar</dt>
+        <dd>\(\displaystyle b \sim \text{Binomial}\left(b + c,\ \tfrac{1}{2}\right), \quad b = {{ cmp_nb_svm.a_acierta_b_falla }},\ c = {{ cmp_nb_svm.a_falla_b_acierta }}\)<small>Solo considera los tweets en los que los modelos discrepan. Si ambos fueran igual de buenos, cada uno acertaría la mitad de esos casos.</small></dd>
+        <dt>Kappa de Cohen</dt>
+        <dd>\(\displaystyle \kappa = \frac{p_o - p_e}{1 - p_e} = {{ '%.3f'|format(mm.kappa['Naive Bayes · SVM']) }}\)<small>Grado de acuerdo entre las predicciones de ambos modelos, descontando el acuerdo por azar. 1 indica predicciones idénticas.</small></dd>
+      </dl>
     </div>
   </div>
 </article>
@@ -129,29 +125,32 @@ b = {{ cmp_nb_svm.a_acierta_b_falla }}, c = {{ cmp_nb_svm.a_falla_b_acierta }}, 
 <article class="finding">
   <div class="idx">04</div>
   <div>
-    <span class="verdict {{ 'sig' if cmp_rf.p_valor < 0.05 else 'nosig' }}">Diferencia significativa · {{ cmp_rf.p_valor|pval }}</span>
-    <h2>Random Forest rinde menos y tiende a decir «positivo»</h2>
+    <span class="verdict {{ 'sig' if cmp_rf.p_valor < 0.05 else 'nosig' }}">{{ 'Diferencia significativa' if cmp_rf.p_valor < 0.05 else 'Sin diferencia significativa' }} · {{ cmp_rf.p_valor|pval }}</span>
+    <h2>Random Forest tiene menor precisión y tiende a clasificar como positivo</h2>
     <p>
-      Random Forest queda <strong>{{ '%.1f'|format((M[best].accuracy - rf.accuracy) * 100) }} puntos por debajo</strong>
-      de {{ best }}, y la diferencia es significativa. Además está <strong>sesgado</strong>: predice positivo en el
-      {{ rf.pct_pred_positivo|pct(0) }} de los casos, cuando el test tiene 50 %. Marca como positivos al
-      <strong>{{ rf.fpr|pct(0) }}</strong> de los tweets negativos, frente al {{ M[best].fpr|pct(0) }} de {{ best }}.
+      Random Forest obtiene {{ '%.1f'|format((M[best].accuracy - rf.accuracy) * 100) }} puntos menos de accuracy que
+      {{ best }}. Además, clasifica como positivo el {{ rf.pct_pred_positivo|pct(0) }} de los tweets, aunque en la
+      muestra solo lo son la mitad. Como consecuencia, marca como positivos el {{ rf.fpr|pct(0) }} de los mensajes
+      negativos, frente al {{ M[best].fpr|pct(0) }} de {{ best }}.
     </p>
     <p>
-      Una explicación probable: cada árbol, con profundidad limitada, solo usa unas pocas de las 5 000 columnas TF-IDF,
-      y los tweets negativos que no contienen esas palabras clave terminan en hojas «positivo».
-      Para esta tarea, <strong>los modelos lineales son más precisos y mucho más ligeros</strong>.
+      Para textos breves como los tweets, los modelos lineales (Naive Bayes y SVM) resultan más precisos y
+      requieren menos recursos.
     </p>
     <div class="evidence">
-      <p class="eyebrow">Evidencia · tasas de error por clase</p>
+      <p class="label">Tasas de error por clase</p>
       <div class="stats">
-        <div class="stat"><small>FPR Random Forest (neg → pos)</small><b class="neg-t">{{ rf.fpr|pct }}</b></div>
-        <div class="stat"><small>FNR Random Forest (pos → neg)</small><b>{{ rf.fnr|pct }}</b></div>
-        <div class="stat"><small>% predicho positivo</small><b>{{ rf.pct_pred_positivo|pct }}</b></div>
-        <div class="stat"><small>McNemar {{ best }} vs RF</small><b>b={{ cmp_rf.a_acierta_b_falla }} · c={{ cmp_rf.a_falla_b_acierta }}</b></div>
+        <div class="stat"><small>Negativos marcados como positivos</small><b class="neg-t">{{ rf.fpr|pct }}</b></div>
+        <div class="stat"><small>Positivos marcados como negativos</small><b>{{ rf.fnr|pct }}</b></div>
+        <div class="stat"><small>Tweets clasificados como positivos</small><b>{{ rf.pct_pred_positivo|pct }}</b></div>
+        <div class="stat"><small>Solo acierta {{ best }} / solo Random Forest</small><b>{{ cmp_rf.a_acierta_b_falla }} / {{ cmp_rf.a_falla_b_acierta }}</b></div>
       </div>
-      <div class="formula"><b>FPR</b> = FP/(FP+TN) = {{ rf.fp }}/({{ rf.fp }}+{{ rf.tn }}) = <b>{{ '%.4f'|format(rf.fpr) }}</b>
-<b>FNR</b> = FN/(FN+TP) = {{ rf.fn }}/({{ rf.fn }}+{{ rf.tp }}) = <b>{{ '%.4f'|format(rf.fnr) }}</b></div>
+      <dl class="math">
+        <dt>Falsos positivos</dt>
+        <dd>\(\displaystyle FPR = \frac{FP}{FP + TN} = \frac{ {{ rf.fp }} }{ {{ rf.fp }} + {{ rf.tn }} } = {{ '%.3f'|format(rf.fpr) }}\)</dd>
+        <dt>Falsos negativos</dt>
+        <dd>\(\displaystyle FNR = \frac{FN}{FN + TP} = \frac{ {{ rf.fn }} }{ {{ rf.fn }} + {{ rf.tp }} } = {{ '%.3f'|format(rf.fnr) }}\)</dd>
+      </dl>
       <div id="ch-errores" class="chart"></div>
     </div>
   </div>
@@ -159,61 +158,69 @@ b = {{ cmp_nb_svm.a_acierta_b_falla }}, c = {{ cmp_nb_svm.a_falla_b_acierta }}, 
 
 <!-- 05 ------------------------------------------------------------------ -->
 {% set cons = M['Consenso'] %}
+{% set cons_sig = cmp_cons.p_valor < 0.05 %}
 <article class="finding">
   <div class="idx">05</div>
   <div>
-    <span class="verdict {{ 'sig' if cmp_cons.p_valor < 0.05 else 'nosig' }}">
-      {{ 'Mejora significativa' if cmp_cons.p_valor < 0.05 else 'Mejora no significativa' }} · {{ cmp_cons.p_valor|pval }}
-    </span>
-    <h2>Votar entre los tres modelos aporta poco</h2>
+    <span class="verdict {{ 'sig' if cons_sig else 'nosig' }}">{{ 'Mejora significativa' if cons_sig else 'Mejora no significativa' }} · {{ cmp_cons.p_valor|pval }}</span>
+    <h2>{{ 'Combinar los tres modelos mejora el resultado' if cons_sig else 'Combinar los tres modelos aporta poco' }}</h2>
     <p>
-      El consenso por mayoría (2 de 3) alcanza <strong>{{ cons.accuracy|pct(2) }}</strong>, apenas
-      {{ '%+.1f'|format((cons.accuracy - M[best].accuracy) * 100) }} puntos sobre {{ best }}.
-      {% if cmp_cons.p_valor >= 0.05 %}La mejora <strong>no es estadísticamente significativa</strong>.{% endif %}
-      Los modelos coinciden en el {{ mm.acuerdo_3_de_3|pct(0) }} de los tweets y se equivocan en casos parecidos
-      (alto kappa entre NB y SVM), así que el voto casi nunca corrige un error.
+      Cuando la clasificación final se decide por mayoría (al menos dos de tres modelos), la accuracy llega al
+      {{ cons.accuracy|pct(2) }}, {{ '%.1f'|format((cons.accuracy - M[best].accuracy) * 100) }} puntos más que
+      {{ best }} por separado.
+      {% if cons_sig %}La mejora es estadísticamente significativa.{% else %}La mejora no es estadísticamente significativa.{% endif %}
+      Los tres modelos coinciden en el {{ mm.acuerdo_3_de_3|pct(0) }} de los tweets; en el resto, la votación
+      corrige parte de los errores individuales.
     </p>
     <div class="evidence">
-      <p class="eyebrow">Evidencia · acuerdo entre modelos</p>
+      <p class="label">Acuerdo entre modelos</p>
       <div class="stats">
-        <div class="stat"><small>Accuracy consenso</small><b>{{ '%.4f'|format(cons.accuracy) }}</b></div>
-        <div class="stat"><small>Acuerdo 3 de 3</small><b>{{ mm.acuerdo_3_de_3|pct }}</b></div>
+        <div class="stat"><small>Accuracy por mayoría</small><b>{{ '%.4f'|format(cons.accuracy) }}</b></div>
+        <div class="stat"><small>Los tres coinciden</small><b>{{ mm.acuerdo_3_de_3|pct }}</b></div>
         {% for par, k in mm.kappa.items() %}
-        <div class="stat"><small>κ {{ par }}</small><b>{{ '%.3f'|format(k) }}</b></div>
+        <div class="stat"><small>Kappa {{ par|replace(' · ', ' y ') }}</small><b>{{ '%.3f'|format(k) }}</b></div>
         {% endfor %}
       </div>
-      <div class="formula"><b>κ</b> = (p_o − p_e)/(1 − p_e)   p_o: acuerdo observado · p_e: acuerdo esperado por azar
-McNemar consenso vs {{ best }}: b = {{ cmp_cons.a_acierta_b_falla }}, c = {{ cmp_cons.a_falla_b_acierta }} → <b>{{ cmp_cons.p_valor|pval }}</b></div>
+      <dl class="math">
+        <dt>McNemar</dt>
+        <dd>\(b = {{ cmp_cons.a_acierta_b_falla }},\ c = {{ cmp_cons.a_falla_b_acierta }}\)<small>{{ cmp_cons.p_valor|pval }}. \(b\): tweets que solo acierta la votación. \(c\): tweets que solo acierta {{ best }}.</small></dd>
+      </dl>
     </div>
   </div>
 </article>
 
 <!-- 06 ------------------------------------------------------------------ -->
+{% set neg_sig = ng.mcnemar_total.p_valor < 0.05 %}
 <article class="finding">
   <div class="idx">06</div>
   <div>
-    <span class="verdict {{ 'warn' if ng.p_valor < 0.05 else 'nosig' }}">Debilidad del preprocesamiento · {{ ng.p_valor|pval }}</span>
-    <h2>Las negaciones se pierden y eso cuesta precisión</h2>
+    <span class="verdict {{ 'sig' if neg_sig else 'nosig' }}">{{ 'Mejora significativa' if neg_sig else 'Mejora no significativa' }} · {{ ng.mcnemar_total.p_valor|pval }}</span>
+    <h2>Conservar las negaciones mejora la clasificación</h2>
     <p>
-      La lista de <em>stop words</em> en inglés de scikit-learn elimina
-      {% for w in ng.stop_words_negacion_eliminadas %}<code>{{ w }}</code>{{ ', ' if not loop.last }}{% endfor %},
-      y la limpieza parte las contracciones (<code>don't</code> → <code>don</code>). Así,
-      <em>"not good"</em> se convierte en <em>"good"</em>.
+      Expresiones como <em>"not good"</em> o <em>"don't like"</em> invierten el sentido de una frase. En el
+      preprocesamiento habitual estas palabras se descartan por ser muy frecuentes, y <em>"not good"</em> se analiza
+      como <em>"good"</em>. Sentinel las conserva.
     </p>
     <p>
-      El {{ ng.pct_tweets_con_negacion|pct(0) }} de los tweets contiene una negación. En ellos, {{ ng.modelo }}
-      acierta <strong>{{ ng.accuracy_con|pct }}</strong>, frente al <strong>{{ ng.accuracy_sin|pct }}</strong> en
-      el resto: una caída de {{ '%.1f'|format((ng.accuracy_sin - ng.accuracy_con) * 100) }} puntos, estadísticamente
-      significativa. Conservar las negaciones es la mejora más directa para el pipeline.
+      Para medir el efecto, se entrenó {{ ng.modelo }} con y sin este tratamiento. El {{ ng.pct_tweets_con_negacion|pct(0) }}
+      de los tweets contiene alguna negación, y en ellos la accuracy pasa del {{ ng.antes.accuracy_con|pct }} al
+      {{ ng.despues.accuracy_con|pct }}. En el total de la muestra, del {{ ng.antes.accuracy|pct }} al {{ ng.despues.accuracy|pct }}.
     </p>
     <div class="evidence">
-      <p class="eyebrow">Evidencia · χ² (tiene negación × acierto del modelo)</p>
+      <p class="label">Mismo modelo y mismos datos, con y sin negaciones</p>
       <div class="stats">
-        <div class="stat"><small>Tweets con negación</small><b>{{ ng.n_con|miles }}</b><small>de {{ (ng.n_con + ng.n_sin)|miles }}</small></div>
-        <div class="stat"><small>Accuracy con negación</small><b class="neg-t">{{ ng.accuracy_con|pct }}</b></div>
-        <div class="stat"><small>Accuracy sin negación</small><b class="pos-t">{{ ng.accuracy_sin|pct }}</b></div>
-        <div class="stat"><small>χ² (1 g.l.)</small><b>{{ ng.chi2 }}</b></div>
+        <div class="stat"><small>Tweets con negación, antes</small><b class="neg-t">{{ ng.antes.accuracy_con|pct }}</b></div>
+        <div class="stat"><small>Tweets con negación, después</small><b class="pos-t">{{ ng.despues.accuracy_con|pct }}</b></div>
+        <div class="stat"><small>Total, antes</small><b>{{ ng.antes.accuracy|pct }}</b></div>
+        <div class="stat"><small>Total, después</small><b>{{ ng.despues.accuracy|pct }}</b></div>
       </div>
+      <dl class="math">
+        <dt>McNemar, total</dt>
+        <dd>\(b = {{ ng.mcnemar_total.a_acierta_b_falla }},\ c = {{ ng.mcnemar_total.a_falla_b_acierta }}\)<small>{{ ng.mcnemar_total.p_valor|pval }}. \(b\): tweets que solo acierta la versión con negaciones.</small></dd>
+        <dt>McNemar, con negación</dt>
+        <dd>\(b = {{ ng.mcnemar_con_negacion.a_acierta_b_falla }},\ c = {{ ng.mcnemar_con_negacion.a_falla_b_acierta }}\)<small>{{ ng.mcnemar_con_negacion.p_valor|pval }} sobre {{ ng.n_con|miles }} tweets.</small></dd>
+      </dl>
+      <div id="ch-negaciones" class="chart"></div>
     </div>
   </div>
 </article>
@@ -225,32 +232,33 @@ McNemar consenso vs {{ best }}: b = {{ cmp_cons.a_acierta_b_falla }}, c = {{ cmp
 <article class="finding">
   <div class="idx">07</div>
   <div>
-    <span class="verdict {{ 'sig' if mb.spearman_p < 0.05 else 'nosig' }}">Generaliza · ρ = {{ mb.spearman_rho }} · {{ mb.spearman_p|pval }}</span>
-    <h2>Sirve para medir la percepción de <em>marcas reales</em></h2>
+    <span class="verdict {{ 'sig' if mb.spearman_p < 0.05 else 'nosig' }}">{{ 'Correlación significativa' if mb.spearman_p < 0.05 else 'Correlación no significativa' }} · {{ mb.spearman_p|pval }}</span>
+    <h2>Los modelos permiten comparar la percepción de marcas</h2>
     <p>
-      El dataset incluye <strong>{{ mn.n }} tweets etiquetados por personas</strong> (sin contar
-      {{ mn.n_neutros_excluidos }} neutrales), agrupados por marca o tema. Ahí los modelos rinden
-      <strong>mejor</strong> que en el test automático: {% for n, r in mn.modelos.items() %}{{ n }}
-      {{ r.accuracy|pct }}{{ ', ' if not loop.last }}{% endfor %}, porque las etiquetas humanas tienen menos ruido.
+      El dataset incluye {{ mn.n }} tweets sobre marcas y temas concretos, etiquetados por personas. En ellos los
+      modelos obtienen mejores resultados que en el conjunto general:
+      {% for n, r in mn.modelos.items() %}{{ n }} {{ r.accuracy|pct }}{{ ', ' if loop.revindex > 2 else (' y ' if not loop.last) }}{% endfor %}.
     </p>
     <p>
-      Por marca, el % de positivos que predice {{ mb.modelo }} sigue el orden del real
-      (correlación de Spearman <strong>ρ = {{ mb.spearman_rho }}</strong>, significativa): el modelo distingue
-      marcas bien vistas (kindle2, lebron) de mal vistas (time warner, dentist). Pero el error medio por marca es de
-      <strong>{{ '%.0f'|format(mb.mae * 100) }} puntos</strong>, porque cada marca tiene pocos tweets. Sirve para
-      <mark>comparar y ordenar marcas, no para dar un porcentaje exacto</mark>.
+      Al agrupar por marca, el porcentaje de tweets positivos que estima {{ mb.modelo }} sigue el mismo orden que el
+      real, con una correlación de {{ mb.spearman_rho }}. La diferencia media por marca es de
+      {{ '%.0f'|format(mb.mae * 100) }} puntos porcentuales, debido a que cada marca cuenta con pocos tweets. Los
+      resultados son adecuados para comparar y ordenar marcas; el porcentaje exacto debe tomarse como aproximado.
     </p>
     <div class="evidence">
-      <p class="eyebrow">Evidencia · {{ mb.detalle|length }} marcas con ≥ {{ mb.min_tweets }} tweets</p>
+      <p class="label">{{ mb.detalle|length }} marcas y temas con al menos {{ mb.min_tweets }} tweets</p>
       <div class="stats">
         {% for n, r in mn.modelos.items() %}
-        <div class="stat"><small>Accuracy {{ n }} · IC 95 %</small><b>{{ '%.3f'|format(r.accuracy) }}</b><small class="num">[{{ r.accuracy_ic95|join(', ') }}]</small></div>
+        <div class="stat"><small>Accuracy de {{ n }}</small><b>{{ '%.3f'|format(r.accuracy) }}</b><small class="sub num">IC 95 %: {{ r.accuracy_ic95|join(' a ') }}</small></div>
         {% endfor %}
-        <div class="stat"><small>Error medio por marca</small><b>{{ mb.mae|pct }}</b></div>
+        <div class="stat"><small>Diferencia media por marca</small><b>{{ mb.mae|pct }}</b></div>
       </div>
-      <div class="formula"><b>ρ de Spearman</b> = correlación entre el ranking real y el ranking predicho de las marcas
-ρ = {{ mb.spearman_rho }}  →  <b>{{ mb.spearman_p|pval }}</b>   (1 = mismo orden exacto)
-<b>MAE</b> = (1/k) Σ |%pos_real − %pos_pred| = {{ '%.4f'|format(mb.mae) }}</div>
+      <dl class="math">
+        <dt>Spearman</dt>
+        <dd>\(\displaystyle \rho = 1 - \frac{6 \sum d_i^2}{k(k^2 - 1)} = {{ mb.spearman_rho }}\)<small>Correlación entre el orden real y el orden estimado de las marcas. \(d_i\) es la diferencia de posición de cada marca.</small></dd>
+        <dt>Error absoluto medio</dt>
+        <dd>\(\displaystyle \text{MAE} = \frac{1}{k} \sum_{i=1}^{k} \left| \text{real}_i - \text{estimado}_i \right| = {{ '%.3f'|format(mb.mae) }}\)</dd>
+      </dl>
       <div id="ch-marcas" class="chart tall"></div>
     </div>
   </div>
@@ -259,23 +267,25 @@ McNemar consenso vs {{ best }}: b = {{ cmp_cons.a_acierta_b_falla }}, c = {{ cmp
 
 <!-- Conclusión ------------------------------------------------------------ -->
 <section class="section">
-  <h2>Conclusión</h2>
+  <h2>Conclusiones</h2>
   <div class="grid g2">
     <div class="card">
-      <h3>Qué recomendamos</h3>
+      <h3>Recomendación</h3>
       <p>
-        Usar <strong>{{ best }}</strong> (o SVM, estadísticamente equivalentes) con TF-IDF: ≈{{ M[best].accuracy|pct(0) }}
-        de accuracy en datos ruidosos y ≈{{ a.manual.modelos[best].accuracy|pct(0) if a.manual else '—' }} en datos
-        etiquetados a mano, entrenan en segundos y ocupan poco. Random Forest no compensa su costo.
+        Naive Bayes y SVM ofrecen el mejor equilibrio entre precisión y coste, con una accuracy cercana al
+        {{ M[best].accuracy|pct(0) }} en el conjunto general{% if a.manual %} y del
+        {{ a.manual.modelos[best].accuracy|pct(0) }} en tweets etiquetados por personas{% endif %}.
+        {% if cons_sig %}La votación entre los tres modelos aporta una mejora adicional.{% endif %}
+        Random Forest, por sí solo, no compensa su mayor coste.
       </p>
     </div>
     <div class="card">
       <h3>Limitaciones</h3>
       <ul class="clean">
-        <li>Etiquetas por emoticonos (ruido) y sin clase neutral</li>
-        <li>Solo inglés, tweets de 2009</li>
-        <li>Recolección temporal sesgada: no inferir tendencias del dataset</li>
-        <li>Las negaciones se eliminan en el preprocesamiento</li>
+        <li>Etiquetas asignadas automáticamente y sin clase neutral</li>
+        <li>Tweets en inglés, publicados en 2009</li>
+        <li>Distribución temporal condicionada por la recolección</li>
+        <li>Resultados por marca aproximados cuando hay pocos tweets</li>
       </ul>
     </div>
   </div>
@@ -290,57 +300,76 @@ McNemar consenso vs {{ best }}: b = {{ cmp_cons.a_acierta_b_falla }}, c = {{ cmp
 <script>
   const A = {{ a|tojson }};
   const T = SentinelCharts;
+  const pct = v => Math.round(v * 100) + " %";
 
-  // 02 · temporal
+  // 02 · tweets por día y % positivo
+  const corte = A.dataset.sesgo_temporal.corte.slice(5);
   T.render("ch-temporal", {
     tooltip: { trigger: "axis" },
-    legend: { top: 0, data: ["Tweets", "% positivo"] },
-    grid: { left: 60, right: 50, top: 36, bottom: 30 },
+    legend: { top: 0, data: ["Tweets por día", "Porcentaje positivo"] },
+    grid: { left: 56, right: 56, top: 40, bottom: 30 },
     xAxis: { type: "category", data: A.dataset.por_dia.map(d => d.fecha.slice(5)) },
     yAxis: [
-      { type: "value", name: "tweets", axisLabel: { formatter: v => (v / 1000) + "k" } },
-      { type: "value", min: 0, max: 1, axisLabel: { formatter: v => Math.round(v * 100) + "%" }, splitLine: { show: false } },
+      { type: "value", axisLabel: { formatter: v => (v / 1000) + " k" } },
+      { type: "value", min: 0, max: 1, axisLabel: { formatter: pct }, splitLine: { show: false } },
     ],
     series: [
-      { name: "Tweets", type: "bar", data: A.dataset.por_dia.map(d => d.n), itemStyle: { color: T.c.ink3 }, barWidth: "60%" },
-      { name: "% positivo", type: "line", yAxisIndex: 1, data: A.dataset.por_dia.map(d => d.pct_positivo),
+      { name: "Tweets por día", type: "bar", data: A.dataset.por_dia.map(d => d.n), itemStyle: { color: T.c.rule }, barWidth: "60%" },
+      { name: "Porcentaje positivo", type: "line", yAxisIndex: 1, data: A.dataset.por_dia.map(d => d.pct_positivo),
         lineStyle: { width: 2.5, color: T.c.pos }, itemStyle: { color: T.c.pos }, symbolSize: 5,
-        markLine: { symbol: "none", label: { formatter: "corte " + A.dataset.sesgo_temporal.corte.slice(5), color: T.c.neg },
-                    lineStyle: { color: T.c.neg, type: "dashed" },
-                    data: [{ xAxis: A.dataset.sesgo_temporal.corte.slice(5) }] } },
+        tooltip: { valueFormatter: pct },
+        markLine: { symbol: "none", label: { formatter: "Cambio en la recolección", color: T.c.neg, fontFamily: "Inter" },
+                    lineStyle: { color: T.c.neg, type: "dashed" }, data: [{ xAxis: corte }] } },
     ],
   });
 
   // 04 · tasas de error
   const nombres = ["Naive Bayes", "SVM", "Random Forest", "Consenso"].filter(n => n in A.modelos.modelos);
   T.render("ch-errores", {
-    tooltip: { trigger: "axis", valueFormatter: v => (v * 100).toFixed(1) + "%" },
+    tooltip: { trigger: "axis", valueFormatter: v => (v * 100).toFixed(1) + " %" },
     legend: { top: 0 },
-    grid: { left: 110, right: 30, top: 36, bottom: 30 },
-    yAxis: { type: "category", data: nombres, inverse: true },
-    xAxis: { type: "value", max: 0.5, axisLabel: { formatter: v => Math.round(v * 100) + "%" } },
+    grid: { left: 110, right: 30, top: 40, bottom: 30 },
+    yAxis: { type: "category", data: nombres.map(n => n === "Consenso" ? "Votación" : n), inverse: true },
+    xAxis: { type: "value", max: 0.5, axisLabel: { formatter: pct } },
     series: [
-      { name: "Falsos positivos (FPR)", type: "bar", data: nombres.map(n => A.modelos.modelos[n].fpr), itemStyle: { color: T.c.neg } },
-      { name: "Falsos negativos (FNR)", type: "bar", data: nombres.map(n => A.modelos.modelos[n].fnr), itemStyle: { color: T.c.info } },
+      { name: "Negativos marcados como positivos", type: "bar", data: nombres.map(n => A.modelos.modelos[n].fpr), itemStyle: { color: T.c.neg } },
+      { name: "Positivos marcados como negativos", type: "bar", data: nombres.map(n => A.modelos.modelos[n].fnr), itemStyle: { color: T.c.info } },
     ],
   });
 
-  // 07 · marcas (dumbbell real vs predicho)
+  // 06 · negaciones antes / después
+  const ng = A.modelos.negaciones;
+  T.render("ch-negaciones", {
+    tooltip: { trigger: "axis", valueFormatter: v => (v * 100).toFixed(1) + " %" },
+    legend: { top: 0 },
+    grid: { left: 50, right: 20, top: 40, bottom: 30 },
+    xAxis: { type: "category", data: ["Con negación", "Sin negación", "Total"] },
+    yAxis: { type: "value", min: 0.6, max: 0.8, axisLabel: { formatter: pct } },
+    series: [
+      { name: "Sin conservar negaciones", type: "bar", itemStyle: { color: T.c.ink3 },
+        data: [ng.antes.accuracy_con, ng.antes.accuracy_sin, ng.antes.accuracy] },
+      { name: "Conservando negaciones", type: "bar", itemStyle: { color: T.c.pos },
+        label: { show: true, position: "top", formatter: p => (p.value * 100).toFixed(1) + " %", fontFamily: "JetBrains Mono", fontSize: 11 },
+        data: [ng.despues.accuracy_con, ng.despues.accuracy_sin, ng.despues.accuracy] },
+    ],
+  });
+
+  // 07 · marcas: real frente a estimado
   if (A.manual) {
     const mk = A.manual.marcas.detalle.slice().reverse();
     T.render("ch-marcas", {
-      tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, valueFormatter: v => Math.round(v * 100) + "%" },
-      legend: { top: 0, data: ["% positivo real", "% positivo predicho"] },
-      grid: { left: 150, right: 30, top: 36, bottom: 30 },
-      yAxis: { type: "category", data: mk.map(d => d.marca + "  (" + d.n + ")") },
-      xAxis: { type: "value", min: 0, max: 1, axisLabel: { formatter: v => Math.round(v * 100) + "%" } },
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, valueFormatter: pct },
+      legend: { top: 0, data: ["Positivos reales", "Positivos estimados"] },
+      grid: { left: 16, right: 30, top: 40, bottom: 30, containLabel: true },
+      yAxis: { type: "category", data: mk.map(d => d.marca.replaceAll('"', "") + "  (" + d.n + ")") },
+      xAxis: { type: "value", min: 0, max: 1, axisLabel: { formatter: pct } },
       series: [
-        { type: "custom", silent: true, renderItem: (p, api) => {
+        { type: "custom", silent: true, z: 1, data: mk.map(d => [d.pct_real, d.pct_pred]), renderItem: (p, api) => {
             const a = api.coord([api.value(0), p.dataIndex]), b = api.coord([api.value(1), p.dataIndex]);
             return { type: "line", shape: { x1: a[0], y1: a[1], x2: b[0], y2: b[1] }, style: { stroke: T.c.rule, lineWidth: 3 } };
-          }, data: mk.map(d => [d.pct_real, d.pct_pred]), z: 1 },
-        { name: "% positivo real", type: "scatter", symbolSize: 13, data: mk.map(d => d.pct_real), itemStyle: { color: T.c.ink }, z: 3 },
-        { name: "% positivo predicho", type: "scatter", symbolSize: 13, data: mk.map(d => d.pct_pred), itemStyle: { color: T.c.pos }, z: 2 },
+          } },
+        { name: "Positivos reales", type: "scatter", symbolSize: 13, data: mk.map(d => d.pct_real), itemStyle: { color: T.c.ink }, z: 3 },
+        { name: "Positivos estimados", type: "scatter", symbolSize: 13, data: mk.map(d => d.pct_pred), itemStyle: { color: T.c.pos }, z: 2 },
       ],
     });
   }

@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Sentinel{% endblock %} · Sentimiento de marca</title>
+  <title>{% block title %}Sentinel{% endblock %} · Sentinel</title>
   <link rel="preload" href="{{ url_for('static', filename='fonts/fraunces.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/katex/katex.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   {% block head %}{% endblock %}
 </head>
@@ -13,18 +14,27 @@
     <div class="topbar-in">
       <a class="brand" href="{{ url_for('inicio') }}">Sentinel<span>.</span></a>
       <nav>
-        {% for endpoint, nombre in [('inicio', 'Inicio'), ('metricas', 'Métricas'), ('analisis', 'Análisis'),
-                                    ('analizar', 'Analizar texto'), ('dashboard', 'Dashboard'), ('temporal', 'Temporal')] %}
+        {% for endpoint, nombre in [('inicio', 'Inicio'), ('dashboard', 'Dashboard'), ('analizar', 'Analizar texto'),
+                                    ('metricas', 'Métricas'), ('analisis', 'Análisis'), ('temporal', 'Temporal')] %}
           <a href="{{ url_for(endpoint) }}" class="{{ 'active' if ruta == endpoint }}">{{ nombre }}</a>
         {% endfor %}
       </nav>
-      <span class="status {{ 'ok' if listos }}">{{ 'modelos listos' if listos else 'sin entrenar' }}</span>
+      <span class="status {{ 'ok' if listos }}">{{ 'Modelos activos' if listos else 'Modelos no disponibles' }}</span>
     </div>
   </header>
   <main>
     {% block content %}{% endblock %}
   </main>
-  <footer><div>Sentiment140 · Naive Bayes · SVM · Random Forest — Proyecto final de Minería de Datos</div></footer>
+  <footer><div>Sentinel · Análisis de sentimiento con Naive Bayes, SVM y Random Forest sobre Sentiment140 · Proyecto final de Minería de Datos</div></footer>
+
+  <script defer src="{{ url_for('static', filename='vendor/katex/katex.min.js') }}"></script>
+  <script defer src="{{ url_for('static', filename='vendor/katex/contrib/auto-render.min.js') }}"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => renderMathInElement(document.body, {
+      delimiters: [{ left: "\\[", right: "\\]", display: true }, { left: "\\(", right: "\\)", display: false }],
+      throwOnError: false,
+    }));
+  </script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

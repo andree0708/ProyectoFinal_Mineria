@@ -6,7 +6,8 @@ Estilo visual **editorial claro**: fondo crema `#f7f3ec`, tinta `#1b1815`, posit
 Tipografías: **Fraunces** (títulos), **Inter** (texto), **JetBrains Mono** (números). Todo está en
 `static/css/style.css` como variables CSS; los gráficos usan **Apache ECharts** con el tema de `static/js/charts.js`.
 
-Las fuentes y ECharts están **alojados en el propio proyecto** (`static/fonts`, `static/vendor`). No se carga nada
+Las fórmulas se renderizan con **KaTeX** (`\( ... \)` en las plantillas).
+Las fuentes, ECharts y KaTeX están **alojados en el propio proyecto** (`static/fonts`, `static/vendor`). No se carga nada
 de Google Fonts ni de CDNs, así que no hay rastreo de terceros y la app funciona sin internet (útil para la presentación).
 
 ---
@@ -25,7 +26,8 @@ de Google Fonts ni de CDNs, así que no hay rastreo de terceros y la app funcion
 
 ### Qué incluye
 
-- Limpieza de texto: minúsculas, quitar URLs, menciones `@usuario`, signos y espacios de más. Los hashtags se convierten en la palabra (`#love` → `love`).
+- Limpieza de texto: entidades HTML, minúsculas, quitar URLs, menciones `@usuario`, signos y espacios de más. Los hashtags se convierten en la palabra (`#love` → `love`).
+- Negaciones: se expanden las contracciones (`don't` → `do not`) y `not`/`no`/`never`... no se eliminan como stop words (mejora ~1.8 puntos de accuracy, ver /analisis).
 - Vectorización TF-IDF (hasta 5000 features, unigramas y bigramas).
 - Tres modelos de clasificación:
   - **Naive Bayes** (`MultinomialNB`)
@@ -67,6 +69,7 @@ data/
   results/     metrics.json y salidas de la app (predicciones, exports)
 models/        modelos .joblib entrenados (no se suben a git)
 src/analysis.py   hallazgos + pruebas estadísticas → data/results/analisis.json (página /analisis)
+src/dashboard.py  resumen de un lote de textos (KPIs, métricas, acuerdo, términos) para /dashboard
 notebooks/     01_eda_y_evaluacion.ipynb: análisis exploratorio + evaluación (para informe/presentación)
 src/           pipeline: config, download, preprocessing, dataset, train, predict
 templates/, static/   frontend Flask
@@ -99,11 +102,16 @@ static/css/style.css
 
 ---
 
-## Parte 2 — falta (compañero 2)
+## Parte 2 — en curso
 
 **Objetivo:** convertir la app en una herramienta real de análisis y un **dashboard de sentimiento**.
 
-Hoy solo se puede pegar **un** texto. Dashboard y análisis masivo no existen (la ruta `/dashboard` es un placeholder).
+**Hecho:** `/dashboard` con KPIs, distribución del sentimiento, rendimiento por modelo, matriz de confusión
+por modelo, acuerdo entre modelos, sesgo por modelo, seguridad de la clasificación y términos por sentimiento.
+Fuentes: conjunto de evaluación (8 000 tweets) y marcas/temas (test manual, con gráfico por marca).
+La lógica está en `src/dashboard.py` (`resumir_lote`), reutilizable para textos del usuario.
+
+**Falta:** pestaña «Tus datos» (pegar textos o subir CSV), tabla de resultados y descarga.
 
 ### Qué hay que construir
 

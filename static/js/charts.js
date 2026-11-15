@@ -29,7 +29,7 @@
       textStyle: { color: c.ink, fontFamily: mono, fontSize: 12 },
       extraCssText: "border-radius:4px;box-shadow:0 4px 18px rgba(0,0,0,.08)",
     },
-    categoryAxis: { ...axis, splitLine: { show: false } },
+    categoryAxis: { ...axis, splitLine: { show: false }, axisLabel: { ...axis.axisLabel, fontFamily: sans, fontSize: 12 } },
     valueAxis: { ...axis, axisLine: { show: false } },
   });
 

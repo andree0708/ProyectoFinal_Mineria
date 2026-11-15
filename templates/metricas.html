@@ -1,36 +1,33 @@
 {% extends "base.html" %}
+{% from "_macros.html" import icon %}
 {% block title %}Métricas{% endblock %}
 {% block content %}
 <section class="hero compact">
-  <p class="eyebrow">Evaluación · split de prueba</p>
-  <h1>Accuracy, F1 y <em>matriz de confusión</em></h1>
+  <h1>Métricas de evaluación</h1>
   {% if datos %}
   <p class="lead">
-    Muestra balanceada de <span class="num">{{ datos.n_muestra|miles }}</span> tweets:
-    <span class="num">{{ datos.n_train|miles }}</span> para entrenar y
-    <span class="num">{{ datos.n_test|miles }}</span> para evaluar (80/20, estratificado). Ningún tweet de
-    prueba se usó para entrenar.
+    Resultados de los tres modelos sobre <span class="num">{{ datos.n_test|miles }}</span> tweets que no se usaron
+    durante el entrenamiento. La muestra completa tiene <span class="num">{{ datos.n_muestra|miles }}</span> tweets,
+    con la misma cantidad de positivos y negativos.
   </p>
   {% endif %}
 </section>
 
 {% if not datos %}
-  <article class="card">
-    <h3>Aún no hay modelos</h3>
-    <p>En la carpeta del proyecto ejecuta <code>python -m src.train</code>.</p>
-  </article>
+  <article class="card"><p>Los modelos todavía no están disponibles.</p></article>
 {% else %}
 {% set best_f1 = datos.modelos.values()|map(attribute='f1')|max %}
+{% set best = (datos.modelos|dictsort|selectattr('1.f1', 'equalto', best_f1)|first) %}
 
 <table class="data">
-  <thead><tr><th>Modelo</th><th class="r">Accuracy</th><th class="r">IC 95 %</th><th class="r">F1</th><th class="r">Precisión</th><th class="r">Recall</th></tr></thead>
+  <thead><tr><th>Modelo</th><th class="r">Accuracy</th><th class="r">Intervalo de confianza 95 %</th><th class="r">F1</th><th class="r">Precisión</th><th class="r">Recall</th></tr></thead>
   <tbody>
   {% for nombre, m in datos.modelos.items() %}
     {% set ic = analisis.modelos.modelos[nombre].accuracy_ic95 if analisis else none %}
     <tr class="{{ 'best' if m.f1 == best_f1 }}">
       <td><strong>{{ nombre }}</strong></td>
       <td class="r">{{ '%.4f'|format(m.accuracy) }}</td>
-      <td class="r muted">{% if ic %}[{{ '%.3f'|format(ic[0]) }}, {{ '%.3f'|format(ic[1]) }}]{% else %}—{% endif %}</td>
+      <td class="r muted">{% if ic %}{{ '%.3f'|format(ic[0]) }} a {{ '%.3f'|format(ic[1]) }}{% else %}-{% endif %}</td>
       <td class="r">{{ '%.4f'|format(m.f1) }}</td>
       <td class="r">{{ '%.4f'|format(m.precision) }}</td>
       <td class="r">{{ '%.4f'|format(m.recall) }}</td>
@@ -38,45 +35,89 @@
   {% endfor %}
   </tbody>
 </table>
+<p class="muted" style="margin-top:10px;font-size:.88rem">La fila resaltada corresponde al modelo con mayor F1.</p>
 
 <section class="section">
   <h2>Matrices de confusión</h2>
-  <p class="muted">Filas: clase real · columnas: clase predicha. La intensidad del color es proporcional al porcentaje de cada fila.</p>
+  <p class="muted">Cada fila es la clase real y cada columna la clase predicha. El color indica el porcentaje de cada fila: verde para aciertos, rojo para errores.</p>
   <div class="grid g3">
   {% for nombre, m in datos.modelos.items() %}
     {% set cm = m.matriz_confusion %}
     {% set tn, fp, fn, tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1] %}
-    {% set n = tn + fp + fn + tp %}
     <article class="card">
       <h3>{{ nombre }}</h3>
       <div class="cm">
-        <span></span><span>Pred. neg</span><span>Pred. pos</span>
-        <span>Real neg</span>
+        <span></span><span>Predicho negativo</span><span>Predicho positivo</span>
+        <span>Negativo</span>
         <b class="ok" style="--a:{{ '%.2f'|format(tn / (tn + fp) * 0.8) }}">{{ tn|miles }}</b>
         <b class="ko" style="--a:{{ '%.2f'|format(fp / (tn + fp) * 0.8) }}">{{ fp|miles }}</b>
-        <span>Real pos</span>
+        <span>Positivo</span>
         <b class="ko" style="--a:{{ '%.2f'|format(fn / (fn + tp) * 0.8) }}">{{ fn|miles }}</b>
         <b class="ok" style="--a:{{ '%.2f'|format(tp / (fn + tp) * 0.8) }}">{{ tp|miles }}</b>
       </div>
-      <div class="formula"><b>Accuracy</b> = (TP+TN)/N
-  = ({{ tp }}+{{ tn }})/{{ n }} = <b>{{ '%.4f'|format((tp + tn) / n) }}</b>
-<b>Precisión</b>  pos {{ '%.4f'|format(tp / (tp + fp)) }} · neg {{ '%.4f'|format(tn / (tn + fn)) }}
-<b>Recall</b>     pos {{ '%.4f'|format(tp / (tp + fn)) }} · neg {{ '%.4f'|format(tn / (tn + fp)) }}
-<b>F1</b> = 2·P·R/(P+R)
-           pos {{ '%.4f'|format(2 * tp / (2 * tp + fp + fn)) }} · neg {{ '%.4f'|format(2 * tn / (2 * tn + fn + fp)) }}</div>
+      <div class="stats" style="margin-top:16px">
+        <div class="stat"><small>Aciertos</small><b>{{ (tp + tn)|miles }}</b></div>
+        <div class="stat"><small>Errores</small><b>{{ (fp + fn)|miles }}</b></div>
+      </div>
     </article>
   {% endfor %}
   </div>
 </section>
 
 <section class="section">
-  <h2>Cómo leer estas métricas</h2>
-  <div class="grid g3">
-    <div class="card"><h3>Accuracy</h3><p>Proporción de tweets bien clasificados. Con clases balanceadas (50/50) es una medida justa; el azar daría <span class="num">0.50</span>.</p></div>
-    <div class="card"><h3>F1</h3><p>Media armónica de precisión y recall. Se reporta el <em>promedio ponderado</em> de F1(pos) y F1(neg) por el soporte de cada clase.</p></div>
-    <div class="card"><h3>IC 95 %</h3><p>Intervalo de Wilson para la accuracy: el rango donde estaría la accuracy real con 95 % de confianza dado el tamaño del test.</p></div>
-  </div>
-  <p style="margin-top:20px"><a class="btn ghost" href="{{ url_for('analisis') }}">Ver el análisis con pruebas estadísticas →</a></p>
+  <h2>Cómo se calculan</h2>
+  <p class="muted">
+    La clase positiva se toma como referencia: \(TP\) son positivos bien clasificados, \(TN\) negativos bien
+    clasificados, \(FP\) negativos clasificados como positivos y \(FN\) positivos clasificados como negativos.
+  </p>
+  <dl class="math">
+    <dt>Accuracy</dt>
+    <dd>\(\displaystyle \text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN}\)<small>Proporción de tweets clasificados correctamente. Con clases equilibradas, el azar obtendría 0.50.</small></dd>
+    <dt>Precisión</dt>
+    <dd>\(\displaystyle P = \frac{TP}{TP + FP}\)<small>De los tweets marcados como positivos, cuántos lo eran realmente.</small></dd>
+    <dt>Recall</dt>
+    <dd>\(\displaystyle R = \frac{TP}{TP + FN}\)<small>De los tweets positivos reales, cuántos se detectaron.</small></dd>
+    <dt>F1</dt>
+    <dd>\(\displaystyle F_1 = \frac{2 \cdot P \cdot R}{P + R}\)<small>Media armónica de precisión y recall. Se calcula para cada clase y se promedia según su tamaño.</small></dd>
+    <dt>Intervalo de confianza</dt>
+    <dd>\(\displaystyle \frac{\hat{p} + \frac{z^2}{2n} \pm z\sqrt{\frac{\hat{p}(1-\hat{p})}{n} + \frac{z^2}{4n^2}}}{1 + \frac{z^2}{n}}, \quad z = 1.96\)<small>Intervalo de Wilson: rango en el que se encontraría la accuracy real con un 95 % de confianza.</small></dd>
+  </dl>
+
+  {% set cm = best[1].matriz_confusion %}
+  {% set tn, fp, fn, tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1] %}
+  {% set P = tp / (tp + fp) %}{% set R = tp / (tp + fn) %}
+  <h3 style="margin-top:32px">Ejemplo con {{ best[0] }}</h3>
+  <dl class="math">
+    <dt>Accuracy</dt>
+    <dd>\(\displaystyle \frac{ {{ tp }} + {{ tn }} }{ {{ tp + tn + fp + fn }} } = {{ '%.4f'|format((tp + tn) / (tp + tn + fp + fn)) }}\)</dd>
+    <dt>Precisión</dt>
+    <dd>\(\displaystyle \frac{ {{ tp }} }{ {{ tp }} + {{ fp }} } = {{ '%.4f'|format(P) }}\)</dd>
+    <dt>Recall</dt>
+    <dd>\(\displaystyle \frac{ {{ tp }} }{ {{ tp }} + {{ fn }} } = {{ '%.4f'|format(R) }}\)</dd>
+    <dt>F1</dt>
+    <dd>\(\displaystyle \frac{2 \cdot {{ '%.4f'|format(P) }} \cdot {{ '%.4f'|format(R) }}}{ {{ '%.4f'|format(P) }} + {{ '%.4f'|format(R) }} } = {{ '%.4f'|format(2 * P * R / (P + R)) }}\)<small>F1 de la clase positiva. El valor de la tabla promedia ambas clases.</small></dd>
+  </dl>
+
+  <h3 style="margin-top:32px">Valores por clase</h3>
+  <table class="data">
+    <thead><tr><th>Modelo</th><th class="r">Precisión pos.</th><th class="r">Recall pos.</th><th class="r">F1 pos.</th><th class="r">Precisión neg.</th><th class="r">Recall neg.</th><th class="r">F1 neg.</th></tr></thead>
+    <tbody>
+    {% for nombre, m in datos.modelos.items() %}
+      {% set cm = m.matriz_confusion %}
+      {% set tn, fp, fn, tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1] %}
+      <tr>
+        <td><strong>{{ nombre }}</strong></td>
+        <td class="r">{{ '%.4f'|format(tp / (tp + fp)) }}</td>
+        <td class="r">{{ '%.4f'|format(tp / (tp + fn)) }}</td>
+        <td class="r">{{ '%.4f'|format(2 * tp / (2 * tp + fp + fn)) }}</td>
+        <td class="r">{{ '%.4f'|format(tn / (tn + fn)) }}</td>
+        <td class="r">{{ '%.4f'|format(tn / (tn + fp)) }}</td>
+        <td class="r">{{ '%.4f'|format(2 * tn / (2 * tn + fn + fp)) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p style="margin-top:28px"><a class="btn ghost" href="{{ url_for('analisis') }}">Ver el análisis de resultados {{ icon('arrow') }}</a></p>
 </section>
 {% endif %}
 {% endblock %}

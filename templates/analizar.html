@@ -2,13 +2,12 @@
 {% block title %}Analizar texto{% endblock %}
 {% block content %}
 <section class="hero compact">
-  <p class="eyebrow">Clasificador en vivo</p>
-  <h1>Analiza <em>un texto</em></h1>
-  <p class="lead">Escribe un tweet o una frase en inglés. Los tres modelos lo clasifican y se toma el voto de la mayoría.</p>
+  <h1>Analizar un texto</h1>
+  <p class="lead">Introduce un tweet o una frase en inglés. Los tres modelos la clasifican y el resultado final se decide por mayoría.</p>
 </section>
 
 <form class="card" method="post">
-  <label for="texto">Tweet o frase</label>
+  <label for="texto">Texto a analizar</label>
   <textarea id="texto" name="texto" rows="4" placeholder="I love my new Kindle, best purchase ever!">{{ texto }}</textarea>
   <button class="btn" type="submit">Clasificar</button>
 </form>
@@ -17,9 +16,8 @@
 
 {% if resultado %}
 <section class="section">
-  <p class="eyebrow">Consenso de los tres modelos</p>
+  <p class="label">Resultado por votación</p>
   <p class="verdict-big {{ 'pos-t' if resultado.consenso == 'Positivo' else 'neg-t' }}">{{ resultado.consenso }}</p>
-  <p class="muted">Texto tras el preprocesamiento: <code>{{ resultado.texto_limpio or '∅ (vacío)' }}</code></p>
   <div class="preds">
     {% for p in resultado.predicciones %}
     <div class="pred {{ p.sentimiento|lower }}">
@@ -27,7 +25,7 @@
       <p>{{ p.sentimiento }}</p>
       {% if p.confianza is not none %}
         <div class="bar"><i style="width:{{ (p.confianza * 100)|round(1) }}%"></i></div>
-        <small class="num muted">confianza {{ '%.2f'|format(p.confianza) }}</small>
+        <small class="muted">Confianza <span class="num">{{ p.confianza|pct(0) }}</span></small>
       {% endif %}
     </div>
     {% endfor %}

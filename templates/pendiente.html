@@ -1,22 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Parte {{ parte }} pendiente{% endblock %}
+{% block title %}Análisis temporal{% endblock %}
 {% block content %}
 <section class="hero compact">
-  <p class="eyebrow">Aún no implementado · Parte {{ parte }}</p>
-  <h1>{% if parte == 2 %}Dashboard de <em>sentimiento</em>{% else %}Análisis <em>temporal</em>{% endif %}</h1>
-  <p class="lead">Esta pantalla está reservada. El detalle de lo que falta está en el README.</p>
+  <h1>Análisis temporal</h1>
+  <p class="lead">Esta sección mostrará la evolución del sentimiento por día, semana o mes. Está en desarrollo.</p>
 </section>
 <article class="card">
+  <h3>Qué incluirá</h3>
   <ul class="clean">
-  {% if parte == 2 %}
-    <li>Cargar varios textos o un CSV</li>
-    <li>Distribución positivo vs negativo</li>
-    <li>Comparar los tres modelos</li>
-  {% else %}
-    <li>Parsear la columna <code>date</code> del dataset</li>
-    <li>Sentimiento por día / semana / mes</li>
-    <li>Filtros de rango de fechas — ojo con el sesgo de recolección (ver <a href="{{ url_for('analisis') }}">Análisis, hallazgo 02</a>)</li>
-  {% endif %}
+    <li>Volumen de tweets positivos y negativos a lo largo del tiempo</li>
+    <li>Proporción de mensajes positivos por periodo</li>
+    <li>Filtro por rango de fechas y días con valores extremos</li>
   </ul>
+  <p style="margin-top:14px" class="muted">Mientras tanto, la sección <a href="{{ url_for('analisis') }}">Análisis</a> incluye la distribución diaria de los tweets del dataset.</p>
 </article>
 {% endblock %}

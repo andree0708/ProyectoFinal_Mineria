@@ -1,14 +1,19 @@
 import json
+from datetime import date, timedelta
 
-from flask import Flask, render_template, request
+from flask import Flask, abort, render_template, request
 
 from src.analysis import ANALISIS_PATH
+from src.dashboard import FUENTES, resumir_lote
 from src.predict import cargar_artefactos, predecir_texto
 from src.train import modelos_listos
 
 app = Flask(__name__)
 
-_cache = {"vectorizer": None, "modelos": None, "metricas": None}
+_cache = {"vectorizer": None, "modelos": None, "metricas": None, "dashboard": {}}
+
+MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+         "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
 
 
 def obtener_artefactos():
@@ -28,12 +33,20 @@ def cargar_analisis():
 # --- Filtros de formato para las plantillas --------------------------------
 @app.template_filter("pct")
 def fmt_pct(valor, decimales=1):
-    return f"{valor * 100:.{decimales}f}%"
+    return f"{valor * 100:.{decimales}f}\u00a0%"
 
 
 @app.template_filter("miles")
 def fmt_miles(valor):
     return f"{valor:,}".replace(",", " ")
+
+
+@app.template_filter("fecha")
+def fmt_fecha(iso, desplazamiento_dias=0, con_anio=True):
+    """'2009-06-17' -> '17 de junio de 2009' (desplazamiento opcional en días)."""
+    f = date.fromisoformat(iso) + timedelta(days=desplazamiento_dias)
+    texto = f"{f.day} de {MESES[f.month - 1]}"
+    return f"{texto} de {f.year}" if con_anio else texto
 
 
 @app.template_filter("pval")
@@ -85,7 +98,19 @@ def analizar():
 
 @app.route("/dashboard")
 def dashboard():
-    return render_template("pendiente.html", parte=2)
+    fuente = request.args.get("fuente", "evaluacion")
+    if fuente not in FUENTES:
+        abort(404)
+    resumen = None
+    if modelos_listos():
+        if fuente not in _cache["dashboard"]:
+            datos = FUENTES[fuente]["cargar"]()
+            if datos is not None:
+                textos, etiquetas, grupos = datos
+                vectorizer, modelos, _ = obtener_artefactos()
+                _cache["dashboard"][fuente] = resumir_lote(textos, vectorizer, modelos, etiquetas, grupos)
+        resumen = _cache["dashboard"].get(fuente)
+    return render_template("dashboard.html", r=resumen, fuente=fuente, fuentes=FUENTES)
 
 
 @app.route("/temporal")

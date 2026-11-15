@@ -1,74 +1,52 @@
 {% extends "base.html" %}
+{% from "_macros.html" import icon %}
 {% block title %}Inicio{% endblock %}
 {% block content %}
 <section class="hero">
-  <p class="eyebrow">Proyecto final · Minería de datos · Sentiment140</p>
-  <h1>¿Qué opina Twitter <em>de tu marca?</em></h1>
+  <h1>Percepción de marca en redes sociales</h1>
   <p class="lead">
-    Clasificamos el sentimiento de tweets con tres algoritmos de minería de datos —
-    <strong>Naive Bayes</strong>, <strong>SVM</strong> y <strong>Random Forest</strong> — entrenados sobre
-    1.6 millones de tweets etiquetados, para medir la percepción de marcas y temas.
+    Sentinel clasifica el sentimiento de publicaciones de Twitter como positivo o negativo. Para ello combina
+    tres modelos de aprendizaje automático, Naive Bayes, SVM y Random Forest, entrenados con el dataset
+    Sentiment140.
   </p>
   <div class="actions">
-    <a class="btn" href="{{ url_for('analizar') }}">Analizar un texto</a>
-    <a class="btn ghost" href="{{ url_for('analisis') }}">Leer el análisis</a>
+    <a class="btn" href="{{ url_for('dashboard') }}">Abrir el dashboard {{ icon('arrow') }}</a>
+    <a class="btn ghost" href="{{ url_for('analizar') }}">Analizar un texto</a>
   </div>
 </section>
 
 {% if datos %}
 {% set mods = datos.modelos %}
-<section class="grid g4">
-  <div class="kpi"><small>Tweets en el dataset</small><b>{{ (analisis.dataset.n_tweets if analisis else 1600000)|miles }}</b><span>muestra de entrenamiento: {{ datos.n_muestra|miles }}</span></div>
-  <div class="kpi"><small>Mejor accuracy</small><b>{{ mods.values()|map(attribute='accuracy')|max|pct }}</b><span>en {{ datos.n_test|miles }} tweets de prueba</span></div>
+<section class="kpis">
+  <div class="kpi"><small>Tweets en el dataset</small><b>{{ (analisis.dataset.n_tweets if analisis else 1600000)|miles }}</b><span>{{ datos.n_muestra|miles }} usados para entrenar y evaluar</span></div>
+  <div class="kpi"><small>Mejor accuracy</small><b>{{ mods.values()|map(attribute='accuracy')|max|pct }}</b><span>sobre {{ datos.n_test|miles }} tweets de evaluación</span></div>
   <div class="kpi"><small>Mejor F1</small><b>{{ '%.3f'|format(mods.values()|map(attribute='f1')|max) }}</b><span>promedio ponderado por clase</span></div>
   {% if analisis and analisis.manual %}
-  <div class="kpi"><small>Test etiquetado a mano</small><b>{{ analisis.manual.modelos.values()|map(attribute='accuracy')|max|pct }}</b><span>{{ analisis.manual.n }} tweets de marcas reales</span></div>
+  <div class="kpi"><small>Tweets sobre marcas</small><b>{{ analisis.manual.modelos.values()|map(attribute='accuracy')|max|pct }}</b><span>accuracy en {{ analisis.manual.n }} tweets etiquetados por personas</span></div>
   {% endif %}
 </section>
+{% else %}
+<article class="card"><p>Los modelos todavía no están disponibles.</p></article>
 {% endif %}
 
 <section class="section">
-  <h2>Cómo está construido</h2>
-  <div class="grid g3">
-    <article class="card">
-      <p class="eyebrow">Parte 1 · lista</p>
-      <h3>Pipeline de minería</h3>
-      <ul class="clean">
-        <li>Limpieza: URLs, menciones, hashtags, signos</li>
-        <li>TF-IDF con unigramas y bigramas</li>
-        <li>Naive Bayes · SVM lineal · Random Forest</li>
-        <li>Accuracy, F1, matriz de confusión y pruebas estadísticas</li>
-      </ul>
-    </article>
-    <article class="card dim">
-      <p class="eyebrow">Parte 2 · en curso</p>
-      <h3>App y dashboard</h3>
-      <ul class="clean">
-        <li>Análisis masivo de textos y CSV</li>
-        <li>Distribución de sentimiento</li>
-        <li>Comparación visual de los modelos</li>
-      </ul>
-    </article>
-    <article class="card dim">
-      <p class="eyebrow">Parte 3 · pendiente</p>
-      <h3>Análisis temporal</h3>
-      <ul class="clean">
-        <li>Sentimiento por día, semana o mes</li>
-        <li>Filtros de rango de fechas</li>
-        <li>Picos positivos y negativos</li>
-      </ul>
-    </article>
+  <h2>Cómo funciona</h2>
+  <div class="grid g4">
+    <div class="card"><h3>1. Datos</h3><p>1,6 millones de tweets en inglés de 2009, etiquetados como positivos o negativos.</p></div>
+    <div class="card"><h3>2. Preprocesamiento</h3><p>Se eliminan enlaces, menciones y signos, y se conservan las negaciones para no perder el sentido de la frase.</p></div>
+    <div class="card"><h3>3. Modelos</h3><p>Cada tweet se convierte en un vector de frecuencias de palabras (TF-IDF) y lo clasifican tres modelos. La decisión final se toma por mayoría.</p></div>
+    <div class="card"><h3>4. Evaluación</h3><p>El rendimiento se mide con tweets que los modelos no vieron durante el entrenamiento.</p></div>
   </div>
 </section>
 
-{% if not listos %}
 <section class="section">
-  <h2>Primeros pasos</h2>
-  <ol>
-    <li><code>pip install -r requirements.txt</code></li>
-    <li><code>python -m src.train</code> — descarga el dataset si falta, entrena y genera el análisis</li>
-    <li><code>python app.py</code> → <code>http://127.0.0.1:5000</code></li>
-  </ol>
+  <h2>Qué puedes consultar</h2>
+  <div class="grid g3">
+    <a class="card" href="{{ url_for('dashboard') }}" style="text-decoration:none"><h3>{{ icon('chart') }} Dashboard</h3><p>Indicadores, distribución del sentimiento y comparación de modelos.</p></a>
+    <a class="card" href="{{ url_for('analizar') }}" style="text-decoration:none"><h3>{{ icon('text') }} Analizar texto</h3><p>Clasifica cualquier frase y compara la respuesta de cada modelo.</p></a>
+    <a class="card" href="{{ url_for('metricas') }}" style="text-decoration:none"><h3>{{ icon('table') }} Métricas</h3><p>Accuracy, F1, matrices de confusión y cómo se calculan.</p></a>
+    <a class="card" href="{{ url_for('analisis') }}" style="text-decoration:none"><h3>{{ icon('flask') }} Análisis</h3><p>Hallazgos principales con la evidencia estadística que los respalda.</p></a>
+    <a class="card dim" href="{{ url_for('temporal') }}" style="text-decoration:none"><h3>{{ icon('clock') }} Temporal</h3><p>Evolución del sentimiento en el tiempo. En desarrollo.</p></a>
+  </div>
 </section>
-{% endif %}
 {% endblock %}

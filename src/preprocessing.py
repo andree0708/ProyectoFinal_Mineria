@@ -1,3 +1,4 @@
+import html
 import re
 
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
@@ -42,7 +43,7 @@ def limpiar_texto(texto: str, negaciones: bool = True) -> str:
     """
     if texto is None:
         return ""
-    texto = str(texto).lower()
+    texto = html.unescape(str(texto)).lower()  # &quot; &amp; &lt; → " & <
     texto = URL_RE.sub(" ", texto)
     texto = MENTION_RE.sub(" ", texto)
     if negaciones:

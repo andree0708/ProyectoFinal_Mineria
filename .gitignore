@@ -17,3 +17,4 @@ data/results/*
 !data/results/.gitkeep
 !data/results/metrics.json
 !data/results/analisis.json
+!data/raw/testdata.manual.2009.06.14.csv

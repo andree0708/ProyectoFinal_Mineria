@@ -273,88 +273,88 @@
     "mejor_individual": "SVM",
     "modelos": {
       "Naive Bayes": {
-        "accuracy": 0.7492,
+        "accuracy": 0.7499,
         "accuracy_ic95": [
-          0.7396,
-          0.7586
+          0.7403,
+          0.7592
         ],
-        "f1": 0.7492,
-        "tp": 2955,
-        "tn": 3039,
-        "fp": 961,
-        "fn": 1045,
-        "fpr": 0.2402,
-        "fnr": 0.2612,
-        "pct_pred_positivo": 0.4895
+        "f1": 0.7498,
+        "tp": 2950,
+        "tn": 3049,
+        "fp": 951,
+        "fn": 1050,
+        "fpr": 0.2378,
+        "fnr": 0.2625,
+        "pct_pred_positivo": 0.4876
       },
       "SVM": {
-        "accuracy": 0.7532,
+        "accuracy": 0.7524,
         "accuracy_ic95": [
-          0.7437,
-          0.7626
+          0.7428,
+          0.7617
         ],
-        "f1": 0.7532,
-        "tp": 3091,
-        "tn": 2935,
-        "fp": 1065,
-        "fn": 909,
-        "fpr": 0.2662,
-        "fnr": 0.2272,
-        "pct_pred_positivo": 0.5195
+        "f1": 0.7523,
+        "tp": 3088,
+        "tn": 2931,
+        "fp": 1069,
+        "fn": 912,
+        "fpr": 0.2672,
+        "fnr": 0.228,
+        "pct_pred_positivo": 0.5196
       },
       "Random Forest": {
-        "accuracy": 0.7161,
+        "accuracy": 0.7216,
         "accuracy_ic95": [
-          0.7061,
-          0.7259
+          0.7117,
+          0.7313
         ],
-        "f1": 0.7133,
-        "tp": 3262,
-        "tn": 2467,
-        "fp": 1533,
-        "fn": 738,
-        "fpr": 0.3832,
-        "fnr": 0.1845,
-        "pct_pred_positivo": 0.5994
+        "f1": 0.7189,
+        "tp": 3281,
+        "tn": 2492,
+        "fp": 1508,
+        "fn": 719,
+        "fpr": 0.377,
+        "fnr": 0.1798,
+        "pct_pred_positivo": 0.5986
       },
       "Consenso": {
-        "accuracy": 0.7608,
+        "accuracy": 0.761,
         "accuracy_ic95": [
-          0.7513,
-          0.77
+          0.7515,
+          0.7702
         ],
-        "f1": 0.7606,
-        "tp": 3149,
-        "tn": 2937,
-        "fp": 1063,
-        "fn": 851,
-        "fpr": 0.2658,
-        "fnr": 0.2128,
-        "pct_pred_positivo": 0.5265
+        "f1": 0.7608,
+        "tp": 3152,
+        "tn": 2936,
+        "fp": 1064,
+        "fn": 848,
+        "fpr": 0.266,
+        "fnr": 0.212,
+        "pct_pred_positivo": 0.527
       }
     },
     "comparaciones": {
       "Naive Bayes vs SVM": {
-        "a_acierta_b_falla": 441,
-        "a_falla_b_acierta": 473,
-        "p_valor": 0.3051775352796259
+        "a_acierta_b_falla": 446,
+        "a_falla_b_acierta": 466,
+        "p_valor": 0.5292717776667694
       },
       "SVM vs Random Forest": {
-        "a_acierta_b_falla": 1055,
-        "a_falla_b_acierta": 758,
-        "p_valor": 3.2377479808057037e-12
+        "a_acierta_b_falla": 1009,
+        "a_falla_b_acierta": 763,
+        "p_valor": 5.5689956961704495e-09
       },
       "Consenso vs SVM": {
-        "a_acierta_b_falla": 200,
-        "a_falla_b_acierta": 140,
-        "p_valor": 0.0013410446705104107
+        "a_acierta_b_falla": 203,
+        "a_falla_b_acierta": 134,
+        "p_valor": 0.00020238350910225676
       }
     },
-    "acuerdo_3_de_3": 0.7016,
+    "acuerdo_3_de_3": 0.7066,
     "kappa": {
-      "Naive Bayes · SVM": 0.7717,
-      "Naive Bayes · Random Forest": 0.4904,
-      "SVM · Random Forest": 0.5432
+      "Naive Bayes · SVM": 0.7722,
+      "Naive Bayes · Random Forest": 0.4999,
+      "SVM · Random Forest": 0.5535
     },
     "negaciones": {
       "modelo": "SVM",
@@ -362,24 +362,24 @@
       "n_con": 1916,
       "n_sin": 6084,
       "antes": {
-        "accuracy": 0.7351,
-        "accuracy_con": 0.6722,
-        "accuracy_sin": 0.7549
+        "accuracy": 0.7346,
+        "accuracy_con": 0.6717,
+        "accuracy_sin": 0.7544
       },
       "despues": {
-        "accuracy": 0.7532,
+        "accuracy": 0.7524,
         "accuracy_con": 0.7265,
-        "accuracy_sin": 0.7617
+        "accuracy_sin": 0.7605
       },
       "mcnemar_total": {
-        "a_acierta_b_falla": 379,
-        "a_falla_b_acierta": 234,
-        "p_valor": 5.139468336434549e-09
+        "a_acierta_b_falla": 380,
+        "a_falla_b_acierta": 238,
+        "p_valor": 1.2254221633381456e-08
       },
       "mcnemar_con_negacion": {
-        "a_acierta_b_falla": 212,
-        "a_falla_b_acierta": 108,
-        "p_valor": 6.32265685892666e-09
+        "a_acierta_b_falla": 215,
+        "a_falla_b_acierta": 110,
+        "p_valor": 5.938014664312877e-09
       }
     }
   },
@@ -388,12 +388,12 @@
     "n_neutros_excluidos": 139,
     "modelos": {
       "Naive Bayes": {
-        "accuracy": 0.8106,
+        "accuracy": 0.8078,
         "accuracy_ic95": [
-          0.7668,
-          0.8477
+          0.7639,
+          0.8452
         ],
-        "f1": 0.8106
+        "f1": 0.8078
       },
       "SVM": {
         "accuracy": 0.7883,
@@ -404,12 +404,12 @@
         "f1": 0.7882
       },
       "Random Forest": {
-        "accuracy": 0.6992,
+        "accuracy": 0.7047,
         "accuracy_ic95": [
-          0.6498,
-          0.7443
+          0.6556,
+          0.7496
         ],
-        "f1": 0.6898
+        "f1": 0.6961
       }
     },
     "marcas": {
@@ -426,7 +426,7 @@
           "marca": "obama",
           "n": 10,
           "pct_real": 0.9,
-          "pct_pred": 0.5
+          "pct_pred": 0.4
         },
         {
           "marca": "\"night at the museum\"",
@@ -479,7 +479,7 @@
       ],
       "spearman_rho": 0.7631,
       "spearman_p": 0.010234452090391102,
-      "mae": 0.2045
+      "mae": 0.2145
     }
   }
 }

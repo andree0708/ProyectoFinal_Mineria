@@ -43,6 +43,13 @@ python -m src.train      # si falta el dataset, lo descarga solo
 python app.py
 ```
 
+Para el notebook de análisis (gráficos de EDA, matrices de confusión, percepción por marca):
+
+```bash
+pip install -r requirements-notebook.txt
+jupyter lab notebooks/01_eda_y_evaluacion.ipynb
+```
+
 El dataset de Kaggle es un espejo del zip original de Stanford; `src/download.py` baja ese zip directamente, así que no hacen falta credenciales.
 
 ### Estructura de carpetas
@@ -53,6 +60,7 @@ data/
   processed/   muestra_entrenamiento.csv: texto limpio + etiqueta + fecha + split (train/test)
   results/     metrics.json y salidas de la app (predicciones, exports)
 models/        modelos .joblib entrenados (no se suben a git)
+notebooks/     01_eda_y_evaluacion.ipynb: análisis exploratorio + evaluación (para informe/presentación)
 src/           pipeline: config, download, preprocessing, dataset, train, predict
 templates/, static/   frontend Flask
 ```

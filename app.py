@@ -1,14 +1,25 @@
 import json
+import uuid
+from collections import OrderedDict
 from datetime import date, timedelta
 
-from flask import Flask, abort, render_template, request
+import pandas as pd
+from flask import Flask, Response, abort, redirect, render_template, request, url_for
 
 from src.analysis import ANALISIS_PATH
-from src.dashboard import FUENTES, resumir_lote
+from src.config import COLUMNS, RAW_DIR
+from src.dashboard import FUENTE_PROPIA, FUENTES, predecir_lote, resumir_lote, tabla_resultados
+from src.lote import MAX_BYTES, MAX_FILAS, ErrorDatos, leer_csv, leer_texto_pegado, preparar
 from src.predict import cargar_artefactos, predecir_texto
 from src.train import modelos_listos
 
 app = Flask(__name__)
+app.config["MAX_CONTENT_LENGTH"] = MAX_BYTES + 1024 * 1024
+
+# Análisis de datos propios en memoria: se conservan los últimos MAX_LOTES.
+MAX_LOTES = 8
+FILAS_TABLA = 5_000  # filas que se envían a la tabla del navegador; la descarga incluye todas
+_lotes: OrderedDict = OrderedDict()
 
 _cache = {"vectorizer": None, "modelos": None, "metricas": None, "dashboard": {}}
 
@@ -87,7 +98,7 @@ def analizar():
     if request.method == "POST":
         texto = (request.form.get("texto") or "").strip()
         if not modelos_listos():
-            error = "Primero entrena los modelos con: python -m src.train"
+            error = "Los modelos todavía no están disponibles."
         elif not texto:
             error = "Escribe un texto para analizar."
         else:
@@ -101,6 +112,16 @@ def dashboard():
     fuente = request.args.get("fuente", "evaluacion")
     if fuente not in FUENTES:
         abort(404)
+    if fuente == FUENTE_PROPIA:
+        lote = _lotes.get(request.args.get("lote", ""))
+        if lote is None:
+            return render_template("dashboard.html", r=None, fuente=fuente, fuentes=FUENTES,
+                                   max_filas=MAX_FILAS, max_mb=MAX_BYTES // 2**20)
+        _lotes.move_to_end(request.args["lote"])
+        filas = lote["tabla"].head(FILAS_TABLA).fillna("")
+        return render_template("dashboard.html", r=lote["resumen"], fuente=fuente, fuentes=FUENTES,
+                               lote=lote, lote_id=request.args["lote"],
+                               filas=filas.to_dict(orient="records"), columnas=list(filas.columns))
     resumen = None
     if modelos_listos():
         if fuente not in _cache["dashboard"]:
@@ -111,6 +132,75 @@ def dashboard():
                 _cache["dashboard"][fuente] = resumir_lote(textos, vectorizer, modelos, etiquetas, grupos)
         resumen = _cache["dashboard"].get(fuente)
     return render_template("dashboard.html", r=resumen, fuente=fuente, fuentes=FUENTES)
+
+
+@app.route("/dashboard/propios", methods=["POST"])
+def dashboard_propios():
+    def error(mensaje, codigo=400):
+        return render_template("dashboard.html", r=None, fuente=FUENTE_PROPIA, fuentes=FUENTES, error=mensaje,
+                               texto=request.form.get("texto", ""), max_filas=MAX_FILAS,
+                               max_mb=MAX_BYTES // 2**20), codigo
+
+    if not modelos_listos():
+        return error("Los modelos todavía no están disponibles.", 503)
+    archivo = request.files.get("archivo")
+    texto = (request.form.get("texto") or "").strip()
+    try:
+        if archivo and archivo.filename:
+            datos, info = leer_csv(archivo.read())
+            info["nombre"] = archivo.filename
+        elif texto:
+            datos, info = leer_texto_pegado(texto)
+            info["nombre"] = "Texto pegado"
+        else:
+            return error("Pega algunos textos o selecciona un archivo CSV.")
+        datos, info = preparar(datos, info)
+    except ErrorDatos as e:
+        return error(str(e))
+
+    vectorizer, modelos, _ = obtener_artefactos()
+    etiquetas = datos["etiqueta"] if "etiqueta" in datos else None
+    grupos = datos["grupo"] if "grupo" in datos else None
+    pred = predecir_lote(datos["texto"], vectorizer, modelos)
+    lote_id = uuid.uuid4().hex[:12]
+    _lotes[lote_id] = {
+        "info": info,
+        "resumen": resumir_lote(None, vectorizer, modelos, etiquetas, grupos, prediccion=pred),
+        "tabla": tabla_resultados(pred, etiquetas, grupos, datos["fecha"] if "fecha" in datos else None),
+    }
+    while len(_lotes) > MAX_LOTES:
+        _lotes.popitem(last=False)
+    return redirect(url_for("dashboard", fuente=FUENTE_PROPIA, lote=lote_id))
+
+
+@app.route("/dashboard/propios/<lote_id>.csv")
+def descargar_resultados(lote_id):
+    lote = _lotes.get(lote_id)
+    if lote is None:
+        abort(404)
+    return Response(lote["tabla"].to_csv(index=False).encode("utf-8-sig"), mimetype="text/csv",
+                    headers={"Content-Disposition": "attachment; filename=sentimiento_resultados.csv"})
+
+
+@app.route("/dashboard/ejemplo.csv")
+def csv_ejemplo():
+    """Tweets sobre marcas etiquetados por personas, en el formato que acepta la carga."""
+    ruta = RAW_DIR / "testdata.manual.2009.06.14.csv"
+    if not ruta.exists():
+        abort(404)
+    m = pd.read_csv(ruta, encoding="latin-1", header=None, names=COLUMNS)
+    m = m[m["target"] != 2]
+    ejemplo = pd.DataFrame({"text": m["text"], "sentiment": m["target"].map({0: "negative", 4: "positive"}),
+                            "brand": m["flag"].str.strip('"')})
+    return Response(ejemplo.to_csv(index=False).encode("utf-8"), mimetype="text/csv",
+                    headers={"Content-Disposition": "attachment; filename=ejemplo_marcas.csv"})
+
+
+@app.errorhandler(413)
+def demasiado_grande(_):
+    return render_template("dashboard.html", r=None, fuente=FUENTE_PROPIA, fuentes=FUENTES,
+                           error=f"El archivo supera el máximo de {MAX_BYTES // 2**20} MB.",
+                           max_filas=MAX_FILAS, max_mb=MAX_BYTES // 2**20), 413
 
 
 @app.route("/temporal")

@@ -115,13 +115,13 @@ mark { background: linear-gradient(transparent 55%, var(--highlight) 55%); color
   text-decoration: none; letter-spacing: -.02em;
 }
 .brand span { color: var(--neg); }
-nav { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
-nav a {
+header nav { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
+header nav a {
   text-decoration: none; color: var(--ink-2); font-size: .92rem;
   padding: 6px 10px; border-radius: 4px;
 }
-nav a:hover { background: var(--paper-2); color: var(--ink); }
-nav a.active { color: var(--ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--ink); border-radius: 0; }
+header nav a:hover { background: var(--paper-2); color: var(--ink); }
+header nav a.active { color: var(--ink); font-weight: 600; box-shadow: inset 0 -2px 0 var(--ink); border-radius: 0; }
 .status { font: 500 .75rem var(--mono); display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
 .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--neg); }
 .status.ok::before { background: var(--pos); }
@@ -286,9 +286,51 @@ ul.clean li { padding: 6px 0; border-bottom: 1px solid var(--rule); }
   main { padding-top: 28px; }
   .finding { grid-template-columns: 1fr; }
   .finding .idx { font-size: 1.6rem; margin-bottom: 6px; }
-  nav { order: 3; width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+  header nav { order: 3; width: 100%; overflow-x: auto; flex-wrap: nowrap; }
 }
 
 .kpi b.txt { font-family: var(--serif); font-weight: 700; font-size: clamp(1.4rem, 2.4vw, 1.8rem); letter-spacing: -.01em; padding: .12em 0; }
 h3 .ico { vertical-align: -.12em; margin-right: .3em; }
 a.card:hover { border-color: var(--ink); }
+
+/* --- Tus datos ------------------------------------------------------------ */
+.upload form { display: flex; flex-direction: column; }
+.upload form .btn { align-self: flex-start; margin-top: auto; }
+.upload textarea { min-height: 220px; font-size: .95rem; }
+.drop {
+  display: flex; align-items: center; justify-content: center; gap: 10px; text-align: center;
+  border: 1.5px dashed var(--ink-3); border-radius: var(--radius); padding: 26px 16px; margin: 6px 0 14px;
+  font-weight: 500; color: var(--ink-2); cursor: pointer; background: var(--paper); transition: border-color .15s, background .15s;
+}
+.drop:hover, .drop.over { border-color: var(--ink); background: var(--paper-2); color: var(--ink); }
+.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.drop .ico { width: 1.4em; height: 1.4em; }
+dl.cols { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; margin: 0 0 16px; font-size: .88rem; }
+dl.cols dt { font-weight: 600; }
+dl.cols dd { margin: 0; color: var(--ink-2); }
+dl.cols code { font: 500 .82rem var(--mono); background: var(--paper-2); padding: 1px 5px; border-radius: 3px; }
+.link { color: var(--ink); font-weight: 600; text-underline-offset: 3px; display: inline-flex; align-items: center; gap: .4em; }
+
+.loteinfo { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap;
+  background: var(--card); border: 1px solid var(--rule); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 28px; }
+.loteinfo p { margin: 0; color: var(--ink-2); font-size: .92rem; }
+.loteinfo p b { color: var(--ink); }
+.loteinfo .actions { margin: 0; }
+.loteinfo .btn { padding: 8px 14px; font-size: .86rem; }
+.aviso { background: var(--neg-soft); color: var(--ink); border-radius: var(--radius); padding: 10px 14px; margin: 0 0 18px; font-size: .9rem; }
+
+.toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 12px 0 10px; }
+.search { position: relative; flex: 1 1 220px; max-width: 340px; }
+.search .ico { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--ink-3); }
+.search input { margin: 0; padding: 8px 12px 8px 34px; font-size: .9rem; }
+.table-wrap { overflow-x: auto; }
+table.data.resultados td:first-child { min-width: 280px; max-width: 520px; line-height: 1.45; }
+table.data.resultados td { vertical-align: top; font-family: var(--sans); }
+table.data.resultados td.num { font-family: var(--mono); }
+.upload textarea { flex: 1; }
+.chip { display: inline-block; font: 600 .75rem var(--sans); padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+.chip.positivo { background: var(--pos-soft); color: var(--pos); }
+.chip.negativo { background: var(--neg-soft); color: var(--neg); }
+.chip.fallo { background: var(--ink); color: var(--paper); }
+td.vacio { color: var(--ink-3); }
+.mas { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 12px; color: var(--ink-3); font-size: .86rem; }

@@ -71,6 +71,7 @@ data/
 models/        modelos .joblib entrenados (no se suben a git)
 src/analysis.py   hallazgos + pruebas estadísticas → data/results/analisis.json (página /analisis)
 src/dashboard.py  resumen de un lote de textos (KPIs, métricas, acuerdo, términos) para /dashboard
+src/lote.py       lectura de textos pegados o CSV del usuario (detección de columnas)
 notebooks/     01_eda_y_evaluacion.ipynb: análisis exploratorio + evaluación (para informe/presentación)
 src/           pipeline: config, download, preprocessing, dataset, train, predict
 templates/, static/   frontend Flask
@@ -103,47 +104,24 @@ static/css/style.css
 
 ---
 
-## Parte 2 — en curso
+## Parte 2 — completada
 
-**Objetivo:** convertir la app en una herramienta real de análisis y un **dashboard de sentimiento**.
+**`/dashboard`** con tres fuentes de datos:
 
-**Hecho:** `/dashboard` con KPIs, distribución del sentimiento, rendimiento por modelo, matriz de confusión
-por modelo, acuerdo entre modelos, sesgo por modelo, seguridad de la clasificación y términos por sentimiento.
-Fuentes: conjunto de evaluación (8 000 tweets) y marcas/temas (test manual, con gráfico por marca).
-La lógica está en `src/dashboard.py` (`resumir_lote`), reutilizable para textos del usuario.
+- **Conjunto de evaluación** (40 000 tweets que los modelos no vieron) y **Marcas y temas** (test manual, etiquetado por personas).
+- **Tus datos**: pegar textos (uno por línea) o subir un CSV de hasta 50 000 filas / 10 MB.
+  Las columnas se reconocen por nombre (`src/lote.py`): texto (obligatoria), sentimiento, grupo y fecha (opcionales).
+  También acepta el CSV original de Sentiment140. Hay un CSV de ejemplo descargable en la propia página.
 
-**Falta:** pestaña «Tus datos» (pegar textos o subir CSV), tabla de resultados y descarga.
+Paneles: KPIs, distribución del sentimiento, rendimiento por modelo y matriz de confusión (si hay sentimiento real),
+sentimiento por grupo, acuerdo entre modelos, % positivo por modelo, seguridad de la clasificación y términos
+por sentimiento. Con datos propios, además: tabla por texto con filtros y búsqueda, y descarga de resultados en CSV
+(predicción de cada modelo, votación, probabilidad, acierto y la fecha si venía en el archivo).
 
-### Qué hay que construir
+**`/analizar`**: clasificación de un texto individual con los tres modelos.
 
-1. **Análisis de varios textos**
-   - Caja para pegar muchos tweets (uno por línea).
-   - Subida de CSV con una columna `text` (y opcionalmente `date` para pasárselo a la Parte 3).
-   - Tabla de resultados: texto, predicción de cada modelo, consenso.
-   - Botón para descargar resultados en CSV.
-
-2. **Dashboard de sentimiento**
-   - Porcentaje positivo vs negativo (gráfico de barras o donut).
-   - Conteo total analizado.
-   - Comparación de los 3 modelos: qué tanto coinciden (por ejemplo, 3/3 de acuerdo vs empate).
-   - Palabras o bigramas más frecuentes en positivos y en negativos (se puede sacar del TF-IDF o de conteos sobre `texto_limpio`).
-   - Usar la misma paleta azul / fosforescente.
-
-3. **Integración con la Parte 1 (no reentrenar)**
-   - Reutilizar `src.predict.predecir_texto` y `cargar_artefactos`.
-   - No duplicar el preprocesamiento: importar `limpiar_texto`.
-   - Si los modelos no están entrenados, mostrar el mismo aviso (`python -m src.train`).
-
-### Librerías sugeridas
-
-- Gráficos en el navegador: Chart.js (CDN, sin build) o Plotly.
-- Seguir con Flask y las plantillas actuales (`templates/base.html`).
-
-### Criterio de “terminado”
-
-- Un usuario puede subir 100 textos y ver el % de sentimiento.
-- El dashboard se actualiza con esos resultados (sesión o archivo en `data/results/`).
-- Se ve la comparación Naive Bayes vs SVM vs Random Forest.
+La lógica está en `src/dashboard.py` (`predecir_lote`, `resumir_lote`, `tabla_resultados`). Los análisis de datos
+propios se guardan en memoria (los últimos 8) y se pierden al reiniciar la app.
 
 ---
 
@@ -214,6 +192,6 @@ La Parte 1 guarda `label` como 0/1 (`1` = positivo).
 | Preprocesamiento de texto | Parte 1 lista |
 | Naive Bayes, SVM, Random Forest | Parte 1 lista |
 | Accuracy, F1, matriz de confusión | Parte 1 lista |
-| Aplicación web de análisis de texto | Base en Parte 1; masivo y UX completa = Parte 2 |
-| Dashboard de sentimiento | Parte 2 |
+| Aplicación web de análisis de texto | Parte 2 lista (texto individual y lotes / CSV) |
+| Dashboard de sentimiento | Parte 2 lista |
 | Análisis temporal | Parte 3 |

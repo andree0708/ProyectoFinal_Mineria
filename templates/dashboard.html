@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import icon %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
 <section class="hero compact">
@@ -12,13 +13,60 @@
     {% for clave, f in fuentes.items() %}
       <a href="{{ url_for('dashboard', fuente=clave) }}" class="{{ 'on' if clave == fuente }}">{{ f.nombre }}</a>
     {% endfor %}
-    <button type="button" disabled title="Disponible próximamente" style="opacity:.45;cursor:not-allowed">Tus datos</button>
   </nav>
 </div>
 
-{% if not r %}
+{% if fuente == 'propios' and not r %}
+{% if error %}<p class="aviso">{{ error }}</p>{% endif %}
+<div class="panels p-2 upload">
+  <form class="panel" method="post" action="{{ url_for('dashboard_propios') }}">
+    <h3>Pegar textos</h3>
+    <p class="hint">Un texto por línea, en inglés. Útil para probar con unos pocos tweets o comentarios.</p>
+    <textarea name="texto" rows="10" placeholder="I love my new phone, the camera is amazing&#10;Worst customer service ever, still waiting for a refund&#10;The update is ok but battery life got worse">{{ texto }}</textarea>
+    <button class="btn" type="submit">Analizar textos {{ icon('arrow') }}</button>
+  </form>
+  <form class="panel" method="post" action="{{ url_for('dashboard_propios') }}" enctype="multipart/form-data">
+    <h3>Subir un archivo CSV</h3>
+    <p class="hint">Hasta {{ max_filas|miles }} filas y {{ max_mb }} MB. Las columnas se reconocen por su nombre; no hace falta un formato fijo.</p>
+    <label class="drop" id="drop">
+      <input type="file" name="archivo" accept=".csv,.tsv,.txt,text/csv" required>
+      {{ icon('upload') }}<span id="drop-txt">Selecciona o arrastra un archivo</span>
+    </label>
+    <dl class="cols">
+      <dt>Texto</dt>
+      <dd>Obligatoria. Por ejemplo <code>text</code>, <code>texto</code>, <code>tweet</code> o <code>mensaje</code>. Si ningún nombre coincide, se usa la columna con los textos más largos.</dd>
+      <dt>Sentimiento</dt>
+      <dd>Opcional. Por ejemplo <code>sentiment</code>, <code>sentimiento</code> o <code>label</code>, con valores positivo/negativo, positive/negative, 1/0 o 4/0. Permite medir la precisión de los modelos sobre tus datos.</dd>
+      <dt>Grupo</dt>
+      <dd>Opcional. Por ejemplo <code>brand</code>, <code>marca</code>, <code>tema</code> o <code>producto</code>. Permite comparar el sentimiento entre grupos.</dd>
+      <dt>Fecha</dt>
+      <dd>Opcional. Por ejemplo <code>date</code> o <code>fecha</code>. Se conserva en los resultados descargados.</dd>
+    </dl>
+    <p style="margin:0 0 18px"><a class="link" href="{{ url_for('csv_ejemplo') }}">{{ icon('download') }}Descargar un CSV de ejemplo</a></p>
+    <button class="btn" type="submit">Analizar archivo {{ icon('arrow') }}</button>
+  </form>
+</div>
+{% elif not r %}
   <article class="card"><p>Los datos de este panel todavía no están disponibles.</p></article>
 {% else %}
+{% if lote %}
+{% set inf = lote.info %}
+<div class="loteinfo">
+  <p>
+    {{ icon('file') }} <b>{{ inf.nombre }}</b> · {{ r.n|miles }} textos
+    {% if inf.texto %} · texto: <code>{{ inf.texto }}</code>{% endif %}
+    {% if inf.etiqueta %} · sentimiento: <code>{{ inf.etiqueta }}</code>{% endif %}
+    {% if inf.grupo %} · grupo: <code>{{ inf.grupo }}</code>{% endif %}
+    {% if inf.fecha %} · fecha: <code>{{ inf.fecha }}</code>{% endif %}
+  </p>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('descargar_resultados', lote_id=lote_id) }}">{{ icon('download') }}Descargar resultados</a>
+    <a class="btn ghost" href="{{ url_for('dashboard', fuente='propios') }}">Analizar otros datos</a>
+  </div>
+</div>
+{% if inf.recortado %}<p class="aviso">El archivo tiene {{ inf.n_original|miles }} filas. Se analizaron las primeras {{ r.n|miles }}.</p>{% endif %}
+{% if inf.etiqueta_descartada %}<p class="aviso">La columna <code>{{ inf.etiqueta_descartada }}</code> no contiene valores de sentimiento reconocibles y no se usó para medir la precisión.</p>{% endif %}
+{% endif %}
 {% set con_etiquetas = r.metricas is defined %}
 {% set cons = r.metricas['Consenso'] if con_etiquetas else none %}
 {% set mejor = r.metricas[r.mejor_modelo] if con_etiquetas else none %}
@@ -28,9 +76,9 @@
 <!-- KPIs --------------------------------------------------------------- -->
 <section class="kpis">
   <div class="kpi">
-    <small>Tweets analizados</small>
+    <small>{{ 'Textos analizados' if lote else 'Tweets analizados' }}</small>
     <b>{{ r.n|miles }}</b>
-    <span>{{ fuentes[fuente].nombre }}</span>
+    <span>{{ lote.info.nombre if lote else fuentes[fuente].nombre }}</span>
   </div>
   <div class="kpi">
     <small>Sentimiento positivo</small>
@@ -42,7 +90,7 @@
   <div class="kpi">
     <small>Accuracy por votación</small>
     <b>{{ cons.accuracy|pct }}</b>
-    <span>F1 {{ '%.3f'|format(cons.f1) }} · los tres modelos combinados</span>
+    <span>F1 {{ '%.3f'|format(cons.f1) }} · {% if r.n_etiquetados < r.n %}sobre {{ r.n_etiquetados|miles }} textos con sentimiento{% else %}los tres modelos combinados{% endif %}</span>
   </div>
   <div class="kpi">
     <small>Mejor modelo individual</small>
@@ -148,10 +196,44 @@
   <p class="hint">Palabras y expresiones que aparecen con más frecuencia en un sentimiento que en el otro, según la clasificación por votación.</p>
   <div id="ch-terminos" class="chart tall"></div>
 </section>
+
+{% if lote %}
+<section class="panel" style="margin-top:18px">
+  <h3>Resultados por texto</h3>
+  <p class="hint">Clasificación de cada modelo y resultado por votación.{% if r.n > filas|length %} La tabla muestra las primeras {{ filas|length|miles }} filas; la descarga incluye todas.{% endif %}</p>
+  <div class="toolbar">
+    <div class="tabs small" id="filtro">
+      <button type="button" data-f="todos" class="on">Todos</button>
+      <button type="button" data-f="positivo">Positivos</button>
+      <button type="button" data-f="negativo">Negativos</button>
+      <button type="button" data-f="dividido">Votación dividida</button>
+      {% if 'acierto_votacion' in columnas %}<button type="button" data-f="fallo">Errores</button>{% endif %}
+    </div>
+    <label class="search" style="margin:0">{{ icon('search') }}<input type="text" id="buscar" placeholder="Buscar en los textos" aria-label="Buscar en los textos"></label>
+  </div>
+  <div class="table-wrap">
+    <table class="data resultados">
+      <thead><tr id="cabecera"></tr></thead>
+      <tbody id="cuerpo"></tbody>
+    </table>
+  </div>
+  <div class="mas"><span id="contador"></span><button type="button" class="btn ghost" id="ver-mas" hidden>Mostrar más</button></div>
+</section>
+{% endif %}
 {% endif %}
 {% endblock %}
 
 {% block scripts %}
+{% if fuente == 'propios' and not r %}
+<script>
+  const drop = document.getElementById("drop"), input = drop.querySelector("input"), txt = document.getElementById("drop-txt");
+  const mostrar = () => { if (input.files.length) txt.textContent = input.files[0].name; };
+  input.addEventListener("change", mostrar);
+  ["dragenter", "dragover"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach(e => drop.addEventListener(e, () => drop.classList.remove("over")));
+  drop.addEventListener("drop", ev => { ev.preventDefault(); input.files = ev.dataTransfer.files; mostrar(); });
+</script>
+{% endif %}
 {% if r %}
 <script src="{{ url_for('static', filename='vendor/echarts.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
@@ -204,7 +286,7 @@
   // Sentimiento por marca
   if (R.grupos) {
     const g = R.grupos.slice().reverse();
-    const conReal = "pct_real" in g[0];
+    const conReal = g.some(d => d.pct_real != null);
     T.render("ch-grupos", {
       tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, valueFormatter: v => Math.round(v * 100) + " %" },
       legend: { top: 0 },
@@ -213,6 +295,7 @@
       xAxis: { type: "value", min: 0, max: 1, axisLabel: { formatter: v => Math.round(v * 100) + " %" } },
       series: [
         ...(conReal ? [{ type: "custom", silent: true, z: 1, data: g.map(d => [d.pct_real, d.pct_pred]), renderItem: (p, api) => {
+            if (isNaN(api.value(0))) return null;
             const a = api.coord([api.value(0), p.dataIndex]), b = api.coord([api.value(1), p.dataIndex]);
             return { type: "line", shape: { x1: a[0], y1: a[1], x2: b[0], y2: b[1] }, style: { stroke: T.c.rule, lineWidth: 3 } };
           } },
@@ -289,6 +372,44 @@
       { type: "bar", xAxisIndex: 1, yAxisIndex: 1, barWidth: "60%", data: tp.map(t => ({ name: t.termino, value: t.peso, n: t.n })), itemStyle: { color: T.c.pos, borderRadius: [0, 2, 2, 0] } },
     ],
   });
+
+  {% if lote %}
+  // Tabla de resultados por texto
+  const FILAS = {{ filas|tojson }};
+  const COLS = {{ columnas|tojson }};
+  const TITULOS = { texto: "Texto", grupo: "Grupo", naive_bayes: "Naive Bayes", svm: "SVM", random_forest: "Random Forest",
+                    votacion: "Votación", real: "Real", prob_positivo_nb: "Prob. positivo (NB)" };
+  const visibles = COLS.filter(c => c in TITULOS);
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  document.getElementById("cabecera").innerHTML = visibles.map(c => `<th class="${c === "prob_positivo_nb" ? "r" : ""}">${TITULOS[c]}</th>`).join("");
+  let filtro = "todos", busqueda = "", limite = 50;
+  const celda = (f, c) => {
+    const v = f[c];
+    if (["naive_bayes", "svm", "random_forest", "votacion", "real"].includes(c)) {
+      if (!v) return `<td class="vacio">·</td>`;
+      const fallo = c === "votacion" && f.acierto_votacion === "no";
+      return `<td><span class="chip ${v}">${v === "positivo" ? "Positivo" : "Negativo"}</span>${fallo ? ' <span class="chip fallo" title="No coincide con el valor real">Error</span>' : ""}</td>`;
+    }
+    if (c === "prob_positivo_nb") return `<td class="r num">${(v * 100).toFixed(0)} %</td>`;
+    return `<td>${esc(v ?? "")}</td>`;
+  };
+  const pasa = f => (filtro === "todos" || (filtro === "dividido" ? f.acuerdo === "dividido" : filtro === "fallo" ? f.acierto_votacion === "no" : f.votacion === filtro))
+                    && (!busqueda || f.texto.toLowerCase().includes(busqueda));
+  function pintar() {
+    const sel = FILAS.filter(pasa);
+    document.getElementById("cuerpo").innerHTML = sel.slice(0, limite).map(f => "<tr>" + visibles.map(c => celda(f, c)).join("") + "</tr>").join("")
+      || `<tr><td colspan="${visibles.length}" class="vacio">No hay textos que coincidan.</td></tr>`;
+    document.getElementById("contador").textContent = `${Math.min(limite, sel.length).toLocaleString("es")} de ${sel.length.toLocaleString("es")} textos`;
+    document.getElementById("ver-mas").hidden = sel.length <= limite;
+  }
+  document.querySelectorAll("#filtro button").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("#filtro button").forEach(x => x.classList.toggle("on", x === b));
+    filtro = b.dataset.f; limite = 50; pintar();
+  }));
+  document.getElementById("buscar").addEventListener("input", e => { busqueda = e.target.value.trim().toLowerCase(); limite = 50; pintar(); });
+  document.getElementById("ver-mas").addEventListener("click", () => { limite += 100; pintar(); });
+  pintar();
+  {% endif %}
 
   // Selector de matriz de confusión
   document.querySelectorAll("#cm-tabs button").forEach(b => b.addEventListener("click", () => {

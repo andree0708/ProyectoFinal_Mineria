@@ -261,7 +261,8 @@ ul.clean li { padding: 6px 0; border-bottom: 1px solid var(--rule); }
 .tabs .on:hover { background: var(--ink); color: var(--paper); }
 .tabs.small a, .tabs.small button { padding: 5px 10px; font-size: .8rem; }
 
-.source { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+/* Selector siempre en la misma posición; la descripción, de longitud variable, va debajo. */
+.source { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 28px; }
 .source p { margin: 0; color: var(--ink-2); max-width: 40em; }
 
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 22px; margin-bottom: 40px; }

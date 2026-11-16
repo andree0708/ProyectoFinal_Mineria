@@ -8,12 +8,12 @@
 </section>
 
 <div class="source">
-  <p>{{ fuentes[fuente].descripcion }}</p>
   <nav class="tabs" aria-label="Conjunto de datos">
     {% for clave, f in fuentes.items() %}
       <a href="{{ url_for('dashboard', fuente=clave) }}" class="{{ 'on' if clave == fuente }}">{{ f.nombre }}</a>
     {% endfor %}
   </nav>
+  <p>{{ fuentes[fuente].descripcion }}</p>
 </div>
 
 {% if fuente == 'propios' and not r %}

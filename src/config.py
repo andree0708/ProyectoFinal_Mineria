@@ -19,11 +19,13 @@ SAMPLE_PATH = PROCESSED_DIR / "muestra_entrenamiento.csv"
 METRICS_PATH = RESULTS_DIR / "metrics.json"
 
 # --- Entrenamiento -------------------------------------------------------
-SAMPLE_SIZE = 40_000
+SAMPLE_SIZE = 200_000  # 160 000 entrenamiento / 40 000 evaluación
 TEST_SIZE = 0.2
 RANDOM_STATE = 42
-MAX_FEATURES = 5_000
+MAX_FEATURES = None  # sin tope: el vocabulario se limita solo con MIN_DF
 NGRAM_RANGE = (1, 2)
+MIN_DF = 2
+SUBLINEAR_TF = True  # 1 + log(tf): reduce el peso de términos repetidos
 
 # --- Modelos (binarios, no se versionan) ---------------------------------
 MODELS_DIR = ROOT / "models"

@@ -27,8 +27,9 @@ de Google Fonts ni de CDNs, así que no hay rastreo de terceros y la app funcion
 ### Qué incluye
 
 - Limpieza de texto: entidades HTML, minúsculas, quitar URLs, menciones `@usuario`, signos y espacios de más. Los hashtags se convierten en la palabra (`#love` → `love`).
-- Negaciones: se expanden las contracciones (`don't` → `do not`) y `not`/`no`/`never`... no se eliminan como stop words (mejora ~1.8 puntos de accuracy, ver /analisis).
-- Vectorización TF-IDF (hasta 5000 features, unigramas y bigramas).
+- Negaciones: se expanden las contracciones (`don't` → `do not`) y `not`/`no`/`never`... se conservan. No se eliminan stop words: palabras como `not`, `but` o `so` aportan señal de sentimiento (ver /analisis).
+- Vectorización TF-IDF con unigramas y bigramas, sin tope de vocabulario (`min_df=2`) y `sublinear_tf`.
+- Hiperparámetros elegidos por validación sobre el conjunto de entrenamiento (`python -m src.tuning`): SVM `C=0.25`, Naive Bayes `alpha=1`, Random Forest con 100 árboles sin podar sobre los 20 000 términos más informativos (χ²).
 - Tres modelos de clasificación:
   - **Naive Bayes** (`MultinomialNB`)
   - **SVM** lineal (`LinearSVC`, adecuado para texto)
@@ -77,7 +78,7 @@ templates/, static/   frontend Flask
 
 Abre `http://127.0.0.1:5000`.
 
-El entrenamiento usa una **muestra balanceada de 40 000 tweets** (20 000 negativos y 20 000 positivos) para que SVM y Random Forest terminen en unos minutos. El CSV completo es enorme; no hace falta entrenar con 1.6 millones para demostrar el pipeline. Si quieren más datos, cambien `SAMPLE_SIZE` en `src/config.py`.
+El entrenamiento usa una **muestra balanceada de 200 000 tweets** (80/20: 160 000 para entrenar y 40 000 para evaluar) y tarda unos 3 minutos, casi todo en Random Forest. Con más datos los modelos lineales mejoran poco (≈ 82 % con 640 000) y Random Forest crece a varios GB. El tamaño se cambia con `SAMPLE_SIZE` en `src/config.py`.
 
 Al entrenar se generan:
 

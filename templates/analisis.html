@@ -92,14 +92,17 @@
   <div class="idx">03</div>
   <div>
     <span class="verdict {{ 'nosig' if empate else 'sig' }}">{{ 'Sin diferencia significativa' if empate else 'Diferencia significativa' }} · {{ cmp_nb_svm.p_valor|pval }}</span>
-    <h2>{{ 'Naive Bayes y SVM obtienen resultados equivalentes' if empate else 'Naive Bayes y SVM difieren en rendimiento' }}</h2>
+    <h2>{{ 'Naive Bayes y SVM obtienen resultados equivalentes' if empate else ('SVM' if M['SVM'].accuracy > M['Naive Bayes'].accuracy else 'Naive Bayes') ~ ' supera ligeramente a ' ~ ('Naive Bayes' if M['SVM'].accuracy > M['Naive Bayes'].accuracy else 'SVM') }}</h2>
     <p>
       Naive Bayes alcanza una accuracy de {{ M['Naive Bayes'].accuracy|pct(2) }} y SVM de {{ M['SVM'].accuracy|pct(2) }}.
       {% if empate %}
       Sus intervalos de confianza se solapan y la prueba de McNemar no encuentra una diferencia significativa,
       por lo que ambos modelos pueden considerarse equivalentes para esta tarea.
       {% else %}
-      La prueba de McNemar indica que la diferencia es significativa.
+      {% set gana = 'SVM' if M['SVM'].accuracy > M['Naive Bayes'].accuracy else 'Naive Bayes' %}
+      {{ gana }} acierta {{ '%.1f'|format((M['SVM'].accuracy - M['Naive Bayes'].accuracy)|abs * 100) }} puntos más.
+      Con {{ mm.n_test|miles }} tweets de evaluación, la prueba de McNemar confirma que la diferencia no se debe al
+      azar, aunque en la práctica ambos modelos clasifican de forma muy parecida.
       {% endif %}
     </p>
     <div class="evidence">
@@ -126,16 +129,24 @@
   <div class="idx">04</div>
   <div>
     <span class="verdict {{ 'sig' if cmp_rf.p_valor < 0.05 else 'nosig' }}">{{ 'Diferencia significativa' if cmp_rf.p_valor < 0.05 else 'Sin diferencia significativa' }} · {{ cmp_rf.p_valor|pval }}</span>
-    <h2>Random Forest tiene menor precisión y tiende a clasificar como positivo</h2>
+    {% set rf_sesgo = (rf.pct_pred_positivo - 0.5)|abs > 0.05 %}
+    <h2>{{ 'Random Forest tiene menor precisión y tiende a clasificar como ' ~ ('positivo' if rf.pct_pred_positivo > 0.5 else 'negativo') if rf_sesgo else 'Random Forest tiene menor precisión' }}</h2>
     <p>
       Random Forest obtiene {{ '%.1f'|format((M[best].accuracy - rf.accuracy) * 100) }} puntos menos de accuracy que
-      {{ best }}. Además, clasifica como positivo el {{ rf.pct_pred_positivo|pct(0) }} de los tweets, aunque en la
+      {{ best }}.
+      {% if rf_sesgo %}
+      Además, clasifica como positivo el {{ rf.pct_pred_positivo|pct(0) }} de los tweets, aunque en la
       muestra solo lo son la mitad. Como consecuencia, marca como positivos el {{ rf.fpr|pct(0) }} de los mensajes
       negativos, frente al {{ M[best].fpr|pct(0) }} de {{ best }}.
+      {% else %}
+      Sus errores están repartidos de forma equilibrada entre ambas clases: clasifica como positivo el
+      {{ rf.pct_pred_positivo|pct(0) }} de los tweets, cerca de la proporción real.
+      {% endif %}
     </p>
     <p>
-      Para textos breves como los tweets, los modelos lineales (Naive Bayes y SVM) resultan más precisos y
-      requieren menos recursos.
+      Los árboles de decisión trabajan con pocas palabras a la vez, mientras que los modelos lineales ponderan
+      todo el vocabulario del tweet. Por eso, en textos breves, Naive Bayes y SVM resultan más precisos y
+      requieren muchos menos recursos.
     </p>
     <div class="evidence">
       <p class="label">Tasas de error por clase</p>
@@ -162,15 +173,16 @@
 <article class="finding">
   <div class="idx">05</div>
   <div>
-    <span class="verdict {{ 'sig' if cons_sig else 'nosig' }}">{{ 'Mejora significativa' if cons_sig else 'Mejora no significativa' }} · {{ cmp_cons.p_valor|pval }}</span>
+    <span class="verdict {{ 'sig' if cons_sig else 'nosig' }}">{{ 'Mejora significativa' if cons_sig else 'Sin diferencia significativa' }} · {{ cmp_cons.p_valor|pval }}</span>
     <h2>{{ 'Combinar los tres modelos mejora el resultado' if cons_sig else 'Combinar los tres modelos aporta poco' }}</h2>
     <p>
       Cuando la clasificación final se decide por mayoría (al menos dos de tres modelos), la accuracy llega al
-      {{ cons.accuracy|pct(2) }}, {{ '%.1f'|format((cons.accuracy - M[best].accuracy) * 100) }} puntos más que
-      {{ best }} por separado.
-      {% if cons_sig %}La mejora es estadísticamente significativa.{% else %}La mejora no es estadísticamente significativa.{% endif %}
-      Los tres modelos coinciden en el {{ mm.acuerdo_3_de_3|pct(0) }} de los tweets; en el resto, la votación
-      corrige parte de los errores individuales.
+      {% set dif = (cons.accuracy - M[best].accuracy) * 100 %}
+      {{ cons.accuracy|pct(2) }}{% if dif|abs < 0.1 %}, prácticamente igual que {{ best }} por separado ({{ M[best].accuracy|pct(2) }}).{% else %}, {{ '%.1f'|format(dif|abs) }} puntos {{ 'más' if dif > 0 else 'menos' }} que {{ best }} por separado.{% endif %}
+      {% if cons_sig %}La mejora es estadísticamente significativa.{% else %}La diferencia no es estadísticamente significativa.{% endif %}
+      Los tres modelos coinciden en el {{ mm.acuerdo_3_de_3|pct(0) }} de los tweets.
+      {% if cons_sig %}En el resto, la votación corrige parte de los errores individuales.{% else %}En el resto, los
+      aciertos que aporta la votación se compensan con los que pierde, porque {{ best }} ya es el más preciso de los tres.{% endif %}
     </p>
     <div class="evidence">
       <p class="label">Acuerdo entre modelos</p>
@@ -236,7 +248,8 @@
     <h2>Los modelos permiten comparar la percepción de marcas</h2>
     <p>
       El dataset incluye {{ mn.n }} tweets sobre marcas y temas concretos, etiquetados por personas. En ellos los
-      modelos obtienen mejores resultados que en el conjunto general:
+      modelos obtienen una accuracy similar a la del conjunto general, lo que indica que generalizan bien a
+      texto etiquetado manualmente:
       {% for n, r in mn.modelos.items() %}{{ n }} {{ r.accuracy|pct }}{{ ', ' if loop.revindex > 2 else (' y ' if not loop.last) }}{% endfor %}.
     </p>
     <p>
@@ -272,8 +285,8 @@
     <div class="card">
       <h3>Recomendación</h3>
       <p>
-        Naive Bayes y SVM ofrecen el mejor equilibrio entre precisión y coste, con una accuracy cercana al
-        {{ M[best].accuracy|pct(0) }} en el conjunto general{% if a.manual %} y del
+        {% if empate %}Naive Bayes y SVM ofrecen{% else %}{{ best }} ofrece{% endif %} el mejor equilibrio entre
+        precisión y coste, con una accuracy cercana al {{ M[best].accuracy|pct(0) }} en el conjunto general{% if a.manual %} y del
         {{ a.manual.modelos[best].accuracy|pct(0) }} en tweets etiquetados por personas{% endif %}.
         {% if cons_sig %}La votación entre los tres modelos aporta una mejora adicional.{% endif %}
         Random Forest, por sí solo, no compensa su mayor coste.

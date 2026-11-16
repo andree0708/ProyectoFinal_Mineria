@@ -135,14 +135,11 @@ def analizar_modelos(vectorizer, modelos) -> dict:
 def experimento_negaciones(muestra, test, y, mejor, pred_actual) -> dict:
     """Ablación: mismo modelo y mismos datos, pero con el preprocesamiento original
     (sin expandir contracciones y con la lista de stop words que elimina negaciones)."""
-    from sklearn.feature_extraction.text import TfidfVectorizer
-
-    from src.config import MAX_FEATURES, NGRAM_RANGE
-    from src.train import construir_modelos
+    from src.train import construir_modelos, crear_vectorizador
 
     train = muestra[muestra["split"] == "train"]
     limpio_v1 = lambda s: s.map(lambda t: limpiar_texto(t, negaciones=False))
-    vec_v1 = TfidfVectorizer(max_features=MAX_FEATURES, ngram_range=NGRAM_RANGE, stop_words="english", min_df=2)
+    vec_v1 = crear_vectorizador(stop_words="english")
     modelo_v1 = construir_modelos()[mejor].fit(vec_v1.fit_transform(limpio_v1(train["text"])), train["label"])
     pred_v1 = modelo_v1.predict(vec_v1.transform(limpio_v1(test["text"])))
 
@@ -180,7 +177,7 @@ def analizar_manual(vectorizer, modelos) -> dict | None:
         }
 
     mejor = max(resultado["modelos"], key=lambda n: resultado["modelos"][n]["f1"])
-    marcas = (m.groupby("flag").agg(n=("label", "size"), real=("label", "mean"), pred=(mejor, "mean"))
+    marcas = (m.assign(flag=m["flag"].str.strip('"')).groupby("flag").agg(n=("label", "size"), real=("label", "mean"), pred=(mejor, "mean"))
               .query("n >= 10").sort_values("real", ascending=False))
     rho, p_rho = spearmanr(marcas["real"], marcas["pred"])
     resultado["marcas"] = {

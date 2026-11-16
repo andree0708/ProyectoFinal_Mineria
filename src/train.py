@@ -3,6 +3,7 @@ from pathlib import Path
 
 import joblib
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import (
     accuracy_score,
@@ -13,11 +14,14 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import Pipeline
 from sklearn.svm import LinearSVC
 
 from src.config import (
     MAX_FEATURES,
     METRICS_PATH,
+    MIN_DF,
+    SUBLINEAR_TF,
     RESULTS_DIR,
     SAMPLE_PATH,
     MODEL_FILES,
@@ -28,19 +32,39 @@ from src.config import (
     VECTORIZER_PATH,
 )
 from src.dataset import preparar_muestra
-from src.preprocessing import STOP_WORDS
+
+
+def crear_vectorizador(stop_words=None) -> TfidfVectorizer:
+    """TF-IDF del proyecto. No se eliminan stop words: con suficiente vocabulario,
+    palabras como "not", "but" o "so" aportan señal de sentimiento."""
+    return TfidfVectorizer(
+        max_features=MAX_FEATURES,
+        ngram_range=NGRAM_RANGE,
+        stop_words=stop_words,
+        min_df=MIN_DF,
+        sublinear_tf=SUBLINEAR_TF,
+    )
 
 
 def construir_modelos() -> dict:
+    """Hiperparámetros elegidos por validación sobre el conjunto de entrenamiento
+    (src/tuning.py), nunca mirando el test."""
     return {
-        "Naive Bayes": MultinomialNB(),
-        "SVM": LinearSVC(C=1.0, max_iter=4000, random_state=RANDOM_STATE),
-        "Random Forest": RandomForestClassifier(
-            n_estimators=80,
-            max_depth=25,
-            n_jobs=-1,
-            random_state=RANDOM_STATE,
-        ),
+        "Naive Bayes": MultinomialNB(alpha=1.0),
+        "SVM": LinearSVC(C=0.25, max_iter=4000, random_state=RANDOM_STATE),
+        # Random Forest no maneja bien cientos de miles de columnas dispersas:
+        # se preseleccionan los 20 000 términos más asociados al sentimiento (χ²,
+        # ajustado solo con train) y se dejan crecer los árboles sin podar, como
+        # en la formulación original de Breiman; el bagging controla la varianza.
+        "Random Forest": Pipeline([
+            ("seleccion", SelectKBest(chi2, k=20_000)),
+            ("bosque", RandomForestClassifier(
+                n_estimators=100,
+                max_depth=None,
+                n_jobs=-1,
+                random_state=RANDOM_STATE,
+            )),
+        ]),
     }
 
 
@@ -77,12 +101,7 @@ def entrenar() -> dict:
     X_test, y_test = muestra.loc[idx_test, "texto_limpio"], muestra.loc[idx_test, "label"]
 
     print("Vectorizando con TF-IDF...")
-    vectorizer = TfidfVectorizer(
-        max_features=MAX_FEATURES,
-        ngram_range=NGRAM_RANGE,
-        stop_words=STOP_WORDS,
-        min_df=2,
-    )
+    vectorizer = crear_vectorizador()
     X_train_vec = vectorizer.fit_transform(X_train)
     X_test_vec = vectorizer.transform(X_test)
     joblib.dump(vectorizer, VECTORIZER_PATH)
@@ -100,7 +119,7 @@ def entrenar() -> dict:
         modelo.fit(X_train_vec, y_train)
         pred = modelo.predict(X_test_vec)
         resultados["modelos"][nombre] = metricas_modelo(y_test, pred)
-        joblib.dump(modelo, MODEL_FILES[nombre])
+        joblib.dump(modelo, MODEL_FILES[nombre], compress=3)
         print(f"  accuracy={resultados['modelos'][nombre]['accuracy']}  f1={resultados['modelos'][nombre]['f1']}")
 
     METRICS_PATH.write_text(json.dumps(resultados, indent=2), encoding="utf-8")

@@ -3,15 +3,15 @@ import uuid
 from collections import OrderedDict
 from datetime import date, timedelta
 
-import pandas as pd
-from flask import Flask, Response, abort, redirect, render_template, request, url_for
+from flask import Flask, Response, abort, redirect, render_template, request, send_from_directory, url_for
 
 from src.analysis import ANALISIS_PATH
 from src.curva import CURVA_PATH
 from src.curva import resumir as resumir_curva
-from src.config import COLUMNS, RAW_DIR
 from src.dashboard import FUENTE_PROPIA, FUENTES, predecir_lote, resumir_lote, tabla_resultados
-from src.lote import MAX_BYTES, MAX_FILAS, ErrorDatos, leer_csv, leer_texto_pegado, preparar
+from src.config import SAMPLES_DIR
+from src.lote import (EJEMPLOS, MAX_BYTES, MAX_FILAS, ErrorDatos, leer_csv, leer_ejemplo,
+                      leer_texto_pegado, listar_ejemplos, preparar)
 from src.predict import cargar_artefactos, predecir_texto
 from src.train import modelos_listos
 
@@ -122,7 +122,7 @@ def dashboard():
         lote = _lotes.get(request.args.get("lote", ""))
         if lote is None:
             return render_template("dashboard.html", r=None, fuente=fuente, fuentes=FUENTES,
-                                   max_filas=MAX_FILAS, max_mb=MAX_BYTES // 2**20)
+                                   max_filas=MAX_FILAS, max_mb=MAX_BYTES // 2**20, ejemplos=listar_ejemplos())
         _lotes.move_to_end(request.args["lote"])
         filas = lote["tabla"].head(FILAS_TABLA).fillna("")
         return render_template("dashboard.html", r=lote["resumen"], fuente=fuente, fuentes=FUENTES,
@@ -145,14 +145,18 @@ def dashboard_propios():
     def error(mensaje, codigo=400):
         return render_template("dashboard.html", r=None, fuente=FUENTE_PROPIA, fuentes=FUENTES, error=mensaje,
                                texto=request.form.get("texto", ""), max_filas=MAX_FILAS,
-                               max_mb=MAX_BYTES // 2**20), codigo
+                               max_mb=MAX_BYTES // 2**20, ejemplos=listar_ejemplos()), codigo
 
     if not modelos_listos():
         return error("Los modelos todavía no están disponibles.", 503)
     archivo = request.files.get("archivo")
     texto = (request.form.get("texto") or "").strip()
+    ejemplo = request.form.get("ejemplo")
     try:
-        if archivo and archivo.filename:
+        if ejemplo:
+            datos, info = leer_csv(leer_ejemplo(ejemplo))
+            info["nombre"] = ejemplo
+        elif archivo and archivo.filename:
             datos, info = leer_csv(archivo.read())
             info["nombre"] = archivo.filename
         elif texto:
@@ -188,25 +192,18 @@ def descargar_resultados(lote_id):
                     headers={"Content-Disposition": "attachment; filename=sentimiento_resultados.csv"})
 
 
-@app.route("/dashboard/ejemplo.csv")
-def csv_ejemplo():
-    """Tweets sobre marcas etiquetados por personas, en el formato que acepta la carga."""
-    ruta = RAW_DIR / "testdata.manual.2009.06.14.csv"
-    if not ruta.exists():
+@app.route("/dashboard/ejemplos/<archivo>")
+def descargar_ejemplo(archivo):
+    if archivo not in EJEMPLOS:
         abort(404)
-    m = pd.read_csv(ruta, encoding="latin-1", header=None, names=COLUMNS)
-    m = m[m["target"] != 2]
-    ejemplo = pd.DataFrame({"text": m["text"], "sentiment": m["target"].map({0: "negative", 4: "positive"}),
-                            "brand": m["flag"].str.strip('"')})
-    return Response(ejemplo.to_csv(index=False).encode("utf-8"), mimetype="text/csv",
-                    headers={"Content-Disposition": "attachment; filename=ejemplo_marcas.csv"})
+    return send_from_directory(SAMPLES_DIR, archivo, as_attachment=True, mimetype="text/csv")
 
 
 @app.errorhandler(413)
 def demasiado_grande(_):
     return render_template("dashboard.html", r=None, fuente=FUENTE_PROPIA, fuentes=FUENTES,
                            error=f"El archivo supera el máximo de {MAX_BYTES // 2**20} MB.",
-                           max_filas=MAX_FILAS, max_mb=MAX_BYTES // 2**20), 413
+                           max_filas=MAX_FILAS, max_mb=MAX_BYTES // 2**20, ejemplos=listar_ejemplos()), 413
 
 
 @app.route("/temporal")

@@ -15,6 +15,9 @@ DATASET_URL = "https://cs.stanford.edu/people/alecmgo/trainingandtestdata.zip"
 DATASET_PATH = RAW_DIR / "training.1600000.processed.noemoticon.csv"
 COLUMNS = ["target", "ids", "date", "flag", "user", "text"]
 
+# CSV de ejemplo para la pestaña «Tus datos» del dashboard
+SAMPLES_DIR = ROOT / "samples"
+
 SAMPLE_PATH = PROCESSED_DIR / "muestra_entrenamiento.csv"
 METRICS_PATH = RESULTS_DIR / "metrics.json"
 

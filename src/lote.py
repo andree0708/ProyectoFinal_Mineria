@@ -15,7 +15,7 @@ import io
 import numpy as np
 import pandas as pd
 
-from src.config import COLUMNS
+from src.config import COLUMNS, SAMPLES_DIR
 
 MAX_FILAS = 50_000
 MAX_BYTES = 10 * 1024 * 1024
@@ -31,6 +31,51 @@ NOMBRES_FECHA = {"date", "fecha", "created_at", "timestamp", "datetime", "time"}
 
 POSITIVOS = {"positivo", "positive", "pos", "p", "+", "bueno", "good"}
 NEGATIVOS = {"negativo", "negative", "neg", "n", "-", "malo", "bad"}
+
+
+# Ejemplos disponibles en samples/ (el nombre del archivo es la clave que envía el formulario).
+EJEMPLOS = {
+    "marcas_etiquetadas.csv": {
+        "titulo": "Marcas etiquetadas",
+        "descripcion": "Tweets sobre marcas y temas, con el sentimiento asignado por personas.",
+        "incluye": ["Sentimiento", "Grupo"],
+    },
+    "sentiment140_original.csv": {
+        "titulo": "Formato original de Sentiment140",
+        "descripcion": "Archivo sin cabecera, con seis columnas y sentimiento 0/2/4. Los neutrales se excluyen de las métricas.",
+        "incluye": ["Sin cabecera", "Sentimiento", "Grupo", "Fecha", "Neutrales"],
+    },
+    "tweets_sin_etiqueta.csv": {
+        "titulo": "Tweets sin etiquetar",
+        "descripcion": "Solo texto y fecha. El panel muestra estimaciones, sin métricas de precisión.",
+        "incluye": ["Fecha"],
+    },
+    "resenas_productos.csv": {
+        "titulo": "Reseñas de productos",
+        "descripcion": "Reseñas ficticias con columnas en español, separadas por punto y coma.",
+        "incluye": ["Separador ;", "Sentimiento", "Grupo", "Fecha", "Neutrales"],
+    },
+}
+
+
+def listar_ejemplos(lineas_vista: int = 5, max_caracteres: int = 110) -> list[dict]:
+    """Ejemplos presentes en disco, con número de filas y las primeras líneas tal cual."""
+    lista = []
+    for archivo, meta in EJEMPLOS.items():
+        ruta = SAMPLES_DIR / archivo
+        if not ruta.exists():
+            continue
+        lineas = _decodificar(ruta.read_bytes()).splitlines()
+        sin_cabecera = "Sin cabecera" in meta["incluye"]
+        vista = [l if len(l) <= max_caracteres else l[: max_caracteres - 1] + "…" for l in lineas[:lineas_vista]]
+        lista.append({**meta, "archivo": archivo, "filas": len(lineas) - (0 if sin_cabecera else 1), "vista": vista})
+    return lista
+
+
+def leer_ejemplo(archivo: str) -> bytes:
+    if archivo not in EJEMPLOS or not (SAMPLES_DIR / archivo).exists():
+        raise ErrorDatos("El ejemplo seleccionado no está disponible.")
+    return (SAMPLES_DIR / archivo).read_bytes()
 
 
 class ErrorDatos(ValueError):

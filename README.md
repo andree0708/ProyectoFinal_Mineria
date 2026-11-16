@@ -72,6 +72,7 @@ models/        modelos .joblib entrenados (no se suben a git)
 src/analysis.py   hallazgos + pruebas estadísticas → data/results/analisis.json (página /analisis)
 src/dashboard.py  resumen de un lote de textos (KPIs, métricas, acuerdo, términos) para /dashboard
 src/lote.py       lectura de textos pegados o CSV del usuario (detección de columnas)
+samples/       CSV de ejemplo para la pestaña «Tus datos» (ver samples/README.md)
 notebooks/     01_eda_y_evaluacion.ipynb: análisis exploratorio + evaluación (para informe/presentación)
 src/           pipeline: config, download, preprocessing, dataset, train, predict
 templates/, static/   frontend Flask
@@ -111,7 +112,8 @@ static/css/style.css
 - **Conjunto de evaluación** (40 000 tweets que los modelos no vieron) y **Marcas y temas** (test manual, etiquetado por personas).
 - **Tus datos**: pegar textos (uno por línea) o subir un CSV de hasta 50 000 filas / 10 MB.
   Las columnas se reconocen por nombre (`src/lote.py`): texto (obligatoria), sentimiento, grupo y fecha (opcionales).
-  También acepta el CSV original de Sentiment140. Hay un CSV de ejemplo descargable en la propia página.
+  También acepta el CSV original de Sentiment140. En «Ver datos de ejemplo» se pueden previsualizar, descargar y
+  analizar los CSV de `samples/`, que cubren cada formato admitido.
 
 Paneles: KPIs, distribución del sentimiento, rendimiento por modelo y matriz de confusión (si hay sentimiento real),
 sentimiento por grupo, acuerdo entre modelos, % positivo por modelo, seguridad de la clasificación y términos

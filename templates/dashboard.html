@@ -42,10 +42,41 @@
       <dt>Fecha</dt>
       <dd>Opcional. Por ejemplo <code>date</code> o <code>fecha</code>. Se conserva en los resultados descargados.</dd>
     </dl>
-    <p style="margin:0 0 18px"><a class="link" href="{{ url_for('csv_ejemplo') }}">{{ icon('download') }}Descargar un CSV de ejemplo</a></p>
-    <button class="btn" type="submit">Analizar archivo {{ icon('arrow') }}</button>
+    <div class="actions" style="margin:auto 0 0">
+      <button class="btn" type="submit">Analizar archivo {{ icon('arrow') }}</button>
+      {% if ejemplos %}<button class="btn ghost" type="button" id="ver-ejemplos" aria-expanded="false" aria-controls="ejemplos">{{ icon('file') }}Ver datos de ejemplo</button>{% endif %}
+    </div>
   </form>
 </div>
+
+{% if ejemplos %}
+<section class="panel" id="ejemplos" hidden>
+  <h3>Datos de ejemplo</h3>
+  <p class="hint">Archivos preparados para comprobar los distintos formatos que acepta la carga. Puedes ver sus primeras líneas, descargarlos o analizarlos directamente.</p>
+  <div class="ejemplos">
+    {% for e in ejemplos %}
+    <article class="ejemplo">
+      <div class="ejemplo-head">
+        <h4>{{ e.titulo }}</h4>
+        <span class="num muted">{{ e.filas|miles }} filas</span>
+      </div>
+      <p>{{ e.descripcion }}</p>
+      <p class="chips">{% for x in e.incluye %}<span class="chip neutro">{{ x }}</span>{% endfor %}</p>
+      <details>
+        <summary>Vista previa · <code>{{ e.archivo }}</code></summary>
+        <pre class="vista">{% for l in e.vista %}{{ l }}
+{% endfor %}</pre>
+      </details>
+      <form method="post" action="{{ url_for('dashboard_propios') }}" class="actions">
+        <input type="hidden" name="ejemplo" value="{{ e.archivo }}">
+        <button class="btn" type="submit">Analizar {{ icon('arrow') }}</button>
+        <a class="btn ghost" href="{{ url_for('descargar_ejemplo', archivo=e.archivo) }}">{{ icon('download') }}Descargar</a>
+      </form>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
 {% elif not r %}
   <article class="card"><p>Los datos de este panel todavía no están disponibles.</p></article>
 {% else %}
@@ -232,6 +263,12 @@
   ["dragenter", "dragover"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add("over"); }));
   ["dragleave", "drop"].forEach(e => drop.addEventListener(e, () => drop.classList.remove("over")));
   drop.addEventListener("drop", ev => { ev.preventDefault(); input.files = ev.dataTransfer.files; mostrar(); });
+  const verEj = document.getElementById("ver-ejemplos"), ej = document.getElementById("ejemplos");
+  if (verEj) verEj.addEventListener("click", () => {
+    ej.hidden = !ej.hidden;
+    verEj.setAttribute("aria-expanded", String(!ej.hidden));
+    if (!ej.hidden) ej.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 </script>
 {% endif %}
 {% if r %}

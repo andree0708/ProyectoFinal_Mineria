@@ -7,6 +7,8 @@ import pandas as pd
 from flask import Flask, Response, abort, redirect, render_template, request, url_for
 
 from src.analysis import ANALISIS_PATH
+from src.curva import CURVA_PATH
+from src.curva import resumir as resumir_curva
 from src.config import COLUMNS, RAW_DIR
 from src.dashboard import FUENTE_PROPIA, FUENTES, predecir_lote, resumir_lote, tabla_resultados
 from src.lote import MAX_BYTES, MAX_FILAS, ErrorDatos, leer_csv, leer_texto_pegado, preparar
@@ -49,7 +51,7 @@ def fmt_pct(valor, decimales=1):
 
 @app.template_filter("miles")
 def fmt_miles(valor):
-    return f"{valor:,}".replace(",", " ")
+    return f"{valor:,}".replace(",", "\u00a0")  # espacio no separable: "160 000" no se parte
 
 
 @app.template_filter("fecha")
@@ -87,7 +89,11 @@ def metricas():
 
 @app.route("/analisis")
 def analisis():
-    return render_template("analisis.html", a=cargar_analisis())
+    a = cargar_analisis()
+    if a is not None and CURVA_PATH.exists():
+        a["curva"] = json.loads(CURVA_PATH.read_text(encoding="utf-8"))
+        a["curva"]["resumen"] = resumir_curva(a["curva"])
+    return render_template("analisis.html", a=a)
 
 
 @app.route("/analizar", methods=["GET", "POST"])

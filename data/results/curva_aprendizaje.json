@@ -1,0 +1,143 @@
+{
+  "n_test": 40000,
+  "n_train_elegido": 160000,
+  "max_random_forest": 320000,
+  "puntos": [
+    {
+      "n_train": 10000,
+      "vocabulario": 15935,
+      "modelos": {
+        "Naive Bayes": {
+          "accuracy": 0.7434,
+          "segundos": 0.9
+        },
+        "SVM": {
+          "accuracy": 0.7553,
+          "segundos": 0.9
+        },
+        "Random Forest": {
+          "accuracy": 0.7301,
+          "segundos": 3.2
+        }
+      }
+    },
+    {
+      "n_train": 20000,
+      "vocabulario": 28859,
+      "modelos": {
+        "Naive Bayes": {
+          "accuracy": 0.7572,
+          "segundos": 1.1
+        },
+        "SVM": {
+          "accuracy": 0.7676,
+          "segundos": 1.1
+        },
+        "Random Forest": {
+          "accuracy": 0.7484,
+          "segundos": 6.6
+        }
+      }
+    },
+    {
+      "n_train": 40000,
+      "vocabulario": 51905,
+      "modelos": {
+        "Naive Bayes": {
+          "accuracy": 0.7674,
+          "segundos": 1.9
+        },
+        "SVM": {
+          "accuracy": 0.7826,
+          "segundos": 2.1
+        },
+        "Random Forest": {
+          "accuracy": 0.7558,
+          "segundos": 16.1
+        }
+      }
+    },
+    {
+      "n_train": 80000,
+      "vocabulario": 92383,
+      "modelos": {
+        "Naive Bayes": {
+          "accuracy": 0.7769,
+          "segundos": 2.8
+        },
+        "SVM": {
+          "accuracy": 0.7923,
+          "segundos": 3.2
+        },
+        "Random Forest": {
+          "accuracy": 0.762,
+          "segundos": 44.9
+        }
+      }
+    },
+    {
+      "n_train": 160000,
+      "vocabulario": 163996,
+      "modelos": {
+        "Naive Bayes": {
+          "accuracy": 0.7863,
+          "segundos": 5.5
+        },
+        "SVM": {
+          "accuracy": 0.803,
+          "segundos": 6.5
+        },
+        "Random Forest": {
+          "accuracy": 0.7724,
+          "segundos": 125.0
+        }
+      }
+    },
+    {
+      "n_train": 320000,
+      "vocabulario": 287065,
+      "modelos": {
+        "Naive Bayes": {
+          "accuracy": 0.7912,
+          "segundos": 5.6
+        },
+        "SVM": {
+          "accuracy": 0.8089,
+          "segundos": 9.0
+        },
+        "Random Forest": {
+          "accuracy": 0.7774,
+          "segundos": 536.9
+        }
+      }
+    },
+    {
+      "n_train": 640000,
+      "vocabulario": 500275,
+      "modelos": {
+        "Naive Bayes": {
+          "accuracy": 0.7983,
+          "segundos": 12.5
+        },
+        "SVM": {
+          "accuracy": 0.8159,
+          "segundos": 29.1
+        }
+      }
+    },
+    {
+      "n_train": 1280000,
+      "vocabulario": 868217,
+      "modelos": {
+        "Naive Bayes": {
+          "accuracy": 0.8026,
+          "segundos": 23.6
+        },
+        "SVM": {
+          "accuracy": 0.8228,
+          "segundos": 88.0
+        }
+      }
+    }
+  ]
+}

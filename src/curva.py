@@ -67,5 +67,31 @@ def generar() -> dict:
     return resultado
 
 
+def resumir(curva: dict, modelo: str = "SVM") -> dict:
+    """Cifras derivadas para el texto del hallazgo: ganancia media por cada duplicación
+    de datos antes y después del tamaño elegido, y coste de Random Forest."""
+    from math import log2
+
+    pts = [p for p in curva["puntos"] if modelo in p["modelos"]]
+    acc = lambda p: p["modelos"][modelo]["accuracy"]
+    elegido = next(p for p in pts if p["n_train"] == curva["n_train_elegido"])
+    primero, ultimo = pts[0], pts[-1]
+    por_dup = lambda a, b: (acc(b) - acc(a)) / log2(b["n_train"] / a["n_train"])
+    rf = [p for p in curva["puntos"] if "Random Forest" in p["modelos"]]
+    rf_e = next((p for p in rf if p["n_train"] == elegido["n_train"]), None)
+    rf_sig = next((p for p in rf if p["n_train"] == 2 * elegido["n_train"]), None)
+    return {
+        "modelo": modelo,
+        "n_elegido": elegido["n_train"], "acc_elegido": acc(elegido),
+        "n_min": primero["n_train"], "n_max": ultimo["n_train"], "acc_max": acc(ultimo),
+        "factor_datos": ultimo["n_train"] // elegido["n_train"],
+        "factor_tiempo": round(ultimo["modelos"][modelo]["segundos"] / elegido["modelos"][modelo]["segundos"], 1),
+        "ganancia_antes": round(por_dup(primero, elegido), 4),
+        "ganancia_despues": round(por_dup(elegido, ultimo), 4),
+        "rf_seg_elegido": rf_e and rf_e["modelos"]["Random Forest"]["segundos"],
+        "rf_seg_doble": rf_sig and rf_sig["modelos"]["Random Forest"]["segundos"],
+    }
+
+
 if __name__ == "__main__":
     generar()

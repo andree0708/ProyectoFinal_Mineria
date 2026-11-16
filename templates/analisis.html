@@ -278,6 +278,49 @@
 </article>
 {% endif %}
 
+<!-- 08 ------------------------------------------------------------------ -->
+{% if a.curva %}
+{% set cv = a.curva.resumen %}
+<article class="finding">
+  <div class="idx">08</div>
+  <div>
+    <span class="verdict nosig">Rendimientos decrecientes · {{ '%.1f'|format(cv.ganancia_despues * 100) }} puntos por duplicación</span>
+    <h2>A partir de {{ cv.n_elegido|miles }} tweets, más datos aportan poco</h2>
+    <p>
+      Para elegir el tamaño de la muestra, los modelos se entrenaron con conjuntos de {{ cv.n_min|miles }} a
+      {{ cv.n_max|miles }} tweets y se evaluaron siempre sobre los mismos {{ a.curva.n_test|miles }} tweets. La precisión
+      crece cada vez que se duplican los datos, pero cada vez menos: hasta {{ cv.n_elegido|miles }} tweets, cada
+      duplicación aporta en promedio {{ '%.1f'|format(cv.ganancia_antes * 100) }} puntos a {{ cv.modelo }}; a partir de
+      ahí, {{ '%.1f'|format(cv.ganancia_despues * 100) }} puntos.
+    </p>
+    <p>
+      Con {{ cv.n_elegido|miles }} tweets de entrenamiento, {{ cv.modelo }} alcanza {{ cv.acc_elegido|pct }}. Con el
+      dataset completo llegaría a {{ cv.acc_max|pct }}, {{ '%.1f'|format((cv.acc_max - cv.acc_elegido) * 100) }} puntos
+      más, a cambio de multiplicar por {{ cv.factor_datos }} los datos y por {{ '%.0f'|format(cv.factor_tiempo) }} su
+      tiempo de entrenamiento.
+      {% if cv.rf_seg_doble %}Random Forest es el más afectado: pasa de {{ '%.0f'|format(cv.rf_seg_elegido) }} a
+      {{ '%.0f'|format(cv.rf_seg_doble) }} segundos al duplicar los datos.{% endif %}
+      La mejora restante es medible, pero pequeña frente a su coste; por eso se trabaja con
+      {{ cv.n_elegido|miles }} tweets de entrenamiento.
+    </p>
+    <div class="evidence">
+      <p class="label">Accuracy sobre el conjunto de evaluación según el tamaño del entrenamiento</p>
+      <div class="stats">
+        <div class="stat"><small>{{ cv.modelo }} con {{ cv.n_elegido|miles }} tweets</small><b>{{ '%.3f'|format(cv.acc_elegido) }}</b></div>
+        <div class="stat"><small>{{ cv.modelo }} con {{ cv.n_max|miles }} tweets</small><b>{{ '%.3f'|format(cv.acc_max) }}</b></div>
+        <div class="stat"><small>Ganancia por duplicación, hasta {{ cv.n_elegido|miles }}</small><b>{{ '%.1f'|format(cv.ganancia_antes * 100) }} pts</b></div>
+        <div class="stat"><small>Ganancia por duplicación, después</small><b>{{ '%.1f'|format(cv.ganancia_despues * 100) }} pts</b></div>
+      </div>
+      <dl class="math">
+        <dt>Ganancia por duplicación</dt>
+        <dd>\(\displaystyle \Delta = \frac{\text{acc}(n_2) - \text{acc}(n_1)}{\log_2 (n_2 / n_1)}\)<small>Puntos de accuracy que se ganan, en promedio, cada vez que se duplica el número de tweets de entrenamiento.</small></dd>
+      </dl>
+      <div id="ch-curva" class="chart"></div>
+    </div>
+  </div>
+</article>
+{% endif %}
+
 <!-- Conclusión ------------------------------------------------------------ -->
 <section class="section">
   <h2>Conclusiones</h2>
@@ -366,6 +409,29 @@
         data: [ng.despues.accuracy_con, ng.despues.accuracy_sin, ng.despues.accuracy] },
     ],
   });
+
+  // 08 · curva de aprendizaje
+  if (A.curva) {
+    const pts = A.curva.puntos;
+    const etq = n => n >= 1e6 ? (n / 1e6).toLocaleString("es") + " M" : (n / 1000) + " mil";
+    const col = { "Naive Bayes": T.c.info, "SVM": T.c.pos, "Random Forest": T.c.ink3 };
+    const vals = pts.flatMap(p => Object.values(p.modelos).map(m => m.accuracy));
+    T.render("ch-curva", {
+      tooltip: { trigger: "axis", valueFormatter: v => v == null ? "sin datos" : (v * 100).toFixed(1) + " %" },
+      legend: { top: 0 },
+      grid: { left: 50, right: 20, top: 40, bottom: 46 },
+      xAxis: { type: "category", data: pts.map(p => etq(p.n_train)), boundaryGap: false,
+               name: "Tweets de entrenamiento (escala logarítmica)", nameLocation: "middle", nameGap: 30 },
+      yAxis: { type: "value", min: Math.floor(Math.min(...vals) * 50) / 50, max: Math.ceil(Math.max(...vals) * 50) / 50,
+               axisLabel: { formatter: v => (v * 100).toFixed(0) + " %" } },
+      series: ["Naive Bayes", "SVM", "Random Forest"].map(n => ({
+        name: n, type: "line", symbolSize: 7, lineStyle: { width: 2.5 }, itemStyle: { color: col[n] },
+        data: pts.map(p => p.modelos[n] ? p.modelos[n].accuracy : null),
+        markLine: n === "SVM" ? { symbol: "none", silent: true, data: [{ xAxis: etq(A.curva.n_train_elegido) }],
+          lineStyle: { color: T.c.ink, type: "dashed" }, label: { formatter: "Tamaño elegido", color: T.c.ink2, fontFamily: "Inter" } } : undefined,
+      })),
+    });
+  }
 
   // 07 · marcas: real frente a estimado
   if (A.manual) {

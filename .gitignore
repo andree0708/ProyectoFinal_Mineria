@@ -18,3 +18,7 @@ data/results/*
 !data/results/metrics.json
 !data/results/analisis.json
 !data/raw/testdata.manual.2009.06.14.csv
+
+# Muestra preprocesada: se regenera con python -m src.train (≈ 40 MB)
+data/processed/*
+!data/processed/.gitkeep

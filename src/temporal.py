@@ -97,14 +97,21 @@ def resumir_temporal(base: pd.DataFrame, granularidad: str = "dia",
                      valores: np.ndarray | None = None) -> dict:
     """Agrega la base por periodo y calcula KPIs, extremos e interpretación."""
     df = base
+    mascara = pd.Series(True, index=base.index)
     if desde:
-        df = df[df["fecha"] >= pd.Timestamp(desde)]
+        mascara &= base["fecha"] >= pd.Timestamp(desde)
     if hasta:
-        df = df[df["fecha"] < pd.Timestamp(hasta) + pd.Timedelta(days=1)]
+        mascara &= base["fecha"] < pd.Timestamp(hasta) + pd.Timedelta(days=1)
+    df = base[mascara]
     if not len(df):
         return {"vacio": True, "n": 0, "periodos": []}
 
-    y = np.asarray(valores) if valores is not None else df["label"].to_numpy()
+    # ``valores`` (predicción de un modelo) viene alineado con ``base``
+    # completa: se recorta con la misma máscara del filtro de fechas.
+    if valores is not None:
+        y = np.asarray(valores)[mascara.to_numpy()]
+    else:
+        y = df["label"].to_numpy()
     df = df.assign(periodo=_clave_periodo(df["fecha"], granularidad), _y=y)
     agg = df.groupby("periodo").agg(n=("periodo", "size"), pos=("_y", "sum")).reset_index()
     agg["neg"] = agg["n"] - agg["pos"]
